@@ -1,0 +1,107 @@
+#+TITLE: Notas de Artículo
+#+subtitle: Redes Neuronales Artificiales Avanzadas
+#+author: Marco Antonio Cardoso Moreno
+
+
+* BETA Database
++ 40 trials, one trial for each symbol (target)
+  + 40 targets, QWERTY keyboard. A-Z, 0-9, space, dot, backspace and comma
+** Trial general structure
+1. 0.5 seconds for gaze shift (porpusefully focusing on a target). The target to
+   focus on is covered with a red square
+2. All targets were flickering after step 1 (participants should try to avoid to
+   blink during flickering)
+   1. for participants $S_1$ to $S_{15}$ flickering was for 2 seconds
+   2. for participants $S_{16}$ to $S_{70}$, it lasted 3 seconds
+3. Finally, a rest time of 0.5 seconds
+* Dataset
++ http://bci.med.tsinghua.edu.cn/download.html.
+* Experimento
+** Emotiv
++ *Emotiv Epoc +*
++ 16 electrodos (14 canales y 2 canales de referencia)
++ 128 bps transfer rate
++ frequency response :: 0.14-43 Hz
++ 14-16 bit resolution
++ Basarse únicamente en los electrodos $O_1$ y $O_2$
+  
+** Setup
++ 5 Boxes Tests
++ Distancia de 70 cm entre usuario y pantalla
++ Pantalla ::
+  + 15 pulgadas
+  + 60 Hz refresh rate
+  + resolución 1024 x 768
+  + intervalos de descanso de 5 minutos entre corridas
+
+** Metodología
+  + Cada sujeto realiza uno (de preferencia los 3) de los tests de las 5 cajas
+  + almacenar las lecturas EEG
+  + Considerar solo las lecturas de los electrodos $O_1$ y $O_2$
+** Natural Images
++ Imágenes en blanco y negro /outdoors/. Dimensiones de 800x600 pixeles.
++ Se presenta una pantalla negra antes de mostrar la primera imagen y, después,
+  entre imágenes
++ Las fotos en blanco y negro están centradas en la pantalla
++ pantalla de 1366 x 768 pixeles
++ El estímulo es un círculo amarillo que cubre 4% de la imagen
++ El estímulo aparece entre 8 y 16 segundos después de que se mostró la
+  imagen.
++ El usuario debe, únicamente, observar el punto del estímulo
+** Five boxes test
++ 5 cajas se presentan en el centro de la pantalla, espaciadas uniformemente
++ las cajas se mantienen fijas durante toda la prueba
++ separación entre el usuario y la pantalla de 34 pulgadas
++ En cada prueba, se pone una líne azul que cubra el perímetro de una caja
+  seleccionada aleatoriamente. El usuario debe poner atención a esta caja
++ Un círculo de media pulgada de diametro, blanco, funciona como estimulo
++ Si el círculo se presenta en la caja azul, la caja representa un objetivo
++ El círculo se presenta en todas las cajas, con la probabilidad de /target/ de
+  20%
++ Cada usuario repite de 3 a 5 pruebas con 100 estímulos cada una
+
++ Variant discrimination composed (SB2): el estimulo son las cajas rellenadas
+  con su color original. 120 attended y 480 unattended events
++ Discrimination combined variant (SB3): mezcla de las dos variantes anteriores
+  La mitad de estimulos son simples y la mitad compuestos. Attended stimuli son
+  circulos rojos. 35 attended y 105 unattended
+
+* Glosario
++ BCI :: Brain computer interfaces
++ VEP :: Visual evoked potentials
++ SSVEP :: Steady-state visual evoked potentials
++ EEG :: Electroencephalography
++ ITR :: Information transfer rate
+* Posibles Revistas
+1. Computación y Sistemas (CIC-IPN, CONACyT)
+2. Polibits (conacyt)
+3. Frontiers in Neuroinformatics
+   a. factor de impacto: 4
+4. Frontiers in computational neuroscience
+   a. factor de impacto: 2.38
+5. Frontiers in artificial intelligence
+6. Elsevier Find Journals
+* Artículos
++ [[https://www.frontiersin.org/articles/10.3389/fnins.2018.00525/full][Classification and Prediction of Brain Disorders Using Functional Connectivity: Promising but Challenging]]
++ [[https://www.frontiersin.org/articles/10.3389/frai.2021.618372/full#:~:text=In%20our%20experiments%2C%20we%20found,generalizable%20machine%20learning%20in%20neuroscience.][Generalizable Machine Learning in Neuroscience Using Graph Neural Networks]]
++ [[https://www.frontiersin.org/articles/10.3389/fninf.2018.00023/full][Deep Learning Methods to Process fMRI Data and Their Application in the Diagnosis of Cognitive Impairment: A Brief Overview and Our Opinion]]
++ https://www.sciencedirect.com/science/article/pii/S1746809420301555
+* Datasets y repos
++ [[http://bnci-horizon-2020.eu/database/data-sets]]
++ [[https://github.com/meagmohit/EEG-Datasets]]
++ [[http://www.mindbigdata.com/opendb/imagenet.html]]
+* Notas Dr Amadeo
+* Notas Generales
++ VEP tienen una amplitud pequeña en comparación con la actividad de fondo en
+  las señales EEG
++ SSVEP resultan interesantes en el desarrollo de BCI debido a su alto ITR y
+  bajos tiempos de calibración. Son oscilaciones en las lecturas EEG debidas a
+  un estimulo visual repetitivo, con una frecuencia mayor a 4 Hz.
++ Las señales SSVEP tiene un alto SNR
++ La magnitud de los SSVEP puede depender incluso del color del estímulo
++ Las BCI basadas en SSVEP requieren un estímulo tintineante con una frecuencia
+  constante. En la mayoría de casos, se usa la misma pantalla de la interfaz
+  para generar el estímulo.
+  *Se debe /redibujar/ la forma (o cambiar su color) en una frecuencia compatible con la pantalla*.
+  Por ejemplo, para una pantalla con refresh rate de 60Hz se puede tener un
+  estímulo de 60, 30, 20, 10 Hz

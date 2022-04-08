@@ -1,0 +1,29 @@
+#+TITLE: Image_net
+
++ ImageNet surgió a partir de un cambio en el paradigma de ML en torno a la
+  visión por computadora. Se paso de desarrollar nuevos modelos a obtener
+  grandes cantidades de información. Data ha tenido una gran explosión en
+  las últimas décadas.
++ ImageNet se inspiró en WordNet, pues creyeron que era una buena forma de
+  rganizar conceptos visuales
++ ImageNet == massive ontology of images
+
+* Steps
+1. Ontological structure similar to that of WordNet
+2. Populate categories with thousands of images from the Internet
+3. clean results by hand
+
+* Attempts
+1. With undergrad students, to slow. roughly 19 years
+2. human in the loop approach. Machines do the job, once in a while a person
+   does corrections. They created new algorithms. the dataset would be as good
+   as the state of the art classifiers
+3. mechanical turk, went live in 2009
+* What was right
++ ImageNet targeted scale, because of the theoretical needs of the field. While
+  others targeted detail, which led to overfitting problems.
++ High resolution images
++ High Quality annotations
+* Performance
++ classification: from 0.28 to 0.03 error
++ object detection: from 0.23 to 0.66 accuracy
