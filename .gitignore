@@ -1,0 +1,10 @@
+BCI-SSVEP_Database_Aceves
+.DS_Store
+.idea
+*.log
+tmp/
+
+*.py[cod]
+*.egg
+build
+htmlcov
