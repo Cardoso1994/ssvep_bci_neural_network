@@ -1,0 +1,27 @@
+#+TITLE: Jetson over remote Network
+
+* General
++ Asignar IP estática dentro de la red a Jetson
++ Hacer portforwarding a la jetson para los puertos 22 y 5901 (u otro de vnc)
++ En teoría no funciona a menos que el modem tenga ip pública (telmex)
+  + total play e izzi dan ips nateadas
+* Firewall
++ Instalar =firewalld=
++ seguir pasos de Arch wiki (https://wiki.archlinux.org/title/Firewalld#Ports)
+  para abrir puertos y hacer =reload= de firewalld
+  + =firewall-cmd --reload= (probablemente como sudo)
+  + =-- permanent= to make changes (like open ports) permanent
+    + needs to reload to be applied on runtime
+  + Abrir puertos en Jetso 22 y 5901
+* NOIP
++ Instalar =Dynamic update client= de NOIP y configurar
+  + https://my.noip.com/dynamic-dns/duc
+* VNC
++ Ports :: 5900 en adelante
++ Instalar =tigervnc= y seguir instrucciones de configuración de ArchWiki
++ En otros dispositivos instalar algun vnc viewer
+* SSH
++ instalar =openssh= en Jetson
++ =systemctl status sshd.service= (start y enable)
++ to connect to jetson with ssh and then vnc:
+  + https://www.techrepublic.com/article/how-to-connect-to-vnc-using-ssh/
