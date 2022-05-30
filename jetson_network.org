@@ -25,3 +25,14 @@
 + =systemctl status sshd.service= (start y enable)
 + to connect to jetson with ssh and then vnc:
   + https://www.techrepublic.com/article/how-to-connect-to-vnc-using-ssh/
+  + https://www.digitalocean.com/community/tutorials/how-to-install-and-configure-vnc-on-ubuntu-20-04
+
+To create ssh tunnel:
+#+begin_src shell
+ssh -L 5901:localhost:5901 USER@REMOTE_IP
+#+end_src
+
+Now in vncviewer
+#+begin_src shell
+localhost:5901
+#+end_src

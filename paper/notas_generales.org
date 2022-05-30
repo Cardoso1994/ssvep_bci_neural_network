@@ -1,0 +1,56 @@
+#+TITLE: Notas Generales
+
+* BETA Dataset
++ 70 subjects performing cued spelling task
+  + 42 males and 28 females
++ 40 targets (QWERTY keyboard)
+  + 10 numbers
+  + 26 letters
+  + 4 non-alphanumeric targets:
+    + dot, comma, backspace and space
++ Frequency :: 8 to 15.8 Hz
+
++ Refresh rate of monitor :: 60 Hz
+
+** Procedure
+Four blocks of online BCI experiments of a cued spelling task.
+*** Blocks
++ 40 trials, one trial for each stimulus target (each character in the keyboard)
++ Trial started with a cue (the letter key became a red square), that indicated
+  the user to focus on a given target
++ Then all targets started flickering at their respectives frequencies
++ Ended with a 0.5 s resting time
++ For S1-S15 (subjects), the flickering lasted at least 2s
++ For the rest of the subjects, the flickering lasted at least 3s
+** Data Acquisition
++ Sampling rate 1K Hz
++ Band pass filter of 0.15-200 Hz
++ Another filter, "rechaza banda" to eliminate de 50Hz power line noise
+** Data Preprocessing
++ Harmonics are present up to a frequency of 90 Hz, around
++ They applied a band-pass filter of 3-100 Hz
++ Epochs extracted:
+  + 0.5s before stimulus onset
+  + Stimulus
+    + 2s  (S1 to S15)
+    + 3s (S16 to S70)
++ 0.5s after stimulation
++ All epochs were down-sampled to 250 Hz
+
+* EEG Record Description
++ 70 subjects, one =*.mat= files per subject. In total, 70 =*.mat= files
++ In each file:
+  - EEG data
+  - its counterpart supplementary information
+
+** EEG Data
++ Data is stored as a *4-way tensor* with dimensions:
+  =channel x time_step x block x condition=
++ Each trial:
+  - 0.5s before stimulus onset
+  - 0.5s window after stimulus
+  - 2 or 3 seconds of stimulus
++ For S1-S15: 2s stimulus and a total trial time of 3s
++ For S16-S70: 3s stimulus and a total trial time of 4s
+** Supplementary Information
++
