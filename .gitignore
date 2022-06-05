@@ -8,5 +8,3 @@ tmp/
 *.egg
 build
 htmlcov
-
-S[0-9]+.mat
