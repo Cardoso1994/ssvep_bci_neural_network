@@ -53,4 +53,15 @@ Four blocks of online BCI experiments of a cued spelling task.
 + For S1-S15: 2s stimulus and a total trial time of 3s
 + For S16-S70: 3s stimulus and a total trial time of 4s
 ** Supplementary Information
-+
+** Structure of *mat files
++ Data:
+  a. EEG
+  b. suppl_info
+     + sub :: subject [string]
+     + age :: [float]
+     + gender :: male/female [string]
+     + chan ::  channel. Array with channel information
+       0.  channel index
+       1. degree (polar coordinates)
+       2. radius (polar coordinates)
+       3. channel name
