@@ -1,6 +1,7 @@
 #+TITLE: Notas Generales
 
 * BETA Dataset
++ 4 Blocks, each consisting of 40 trials, one trial per symbol
 + 70 subjects performing cued spelling task
   + 42 males and 28 females
 + 40 targets (QWERTY keyboard)
@@ -14,6 +15,7 @@
 
 ** Procedure
 Four blocks of online BCI experiments of a cued spelling task.
+Each block contains 40 stimuli, one per trial
 *** Blocks
 + 40 trials, one trial for each stimulus target (each character in the keyboard)
 + Trial started with a cue (the letter key became a red square), that indicated
