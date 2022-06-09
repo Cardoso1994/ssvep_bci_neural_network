@@ -66,23 +66,62 @@ S = loadmat("../data/S1_own.mat")
 """
 Creating filterbank. Set of filters to be applied to the signals
 """
-low_freqs_bands = [7, 15, 23, 31]
+low_freqs_bands = [7, 15, 23, 31, 39]
 num_filters = len(low_freqs_bands)
 high_freq_band = 90
 filterbank = []
 for low_freq in low_freqs_bands:
     filterbank.append(signal.butter(FILTER_DEGREE, (low_freq, high_freq_band),
                                     btype='bandpass', fs=FS, output='sos'))
-    print(signal.butter(FILTER_DEGREE, (low_freq, high_freq_band),
-                        btype='bandpass', fs=FS, output='sos'))
 
 # apply filters to each signal, per channel, per block, per character
 undesired_samples = floor((VISUAL_CUE + VISUAL_LATENCY) * FS)
 last_point = undesired_samples + ceil(SAMPLE_LEN)
-cnn_input = np.zeros(NUM_CHNNLS, last_point - undesired_samples, num_filters,
-                     NUM_CHARS, NUM_BLOCKS)
+sample_len = last_point - undesired_samples
+print(f"sample len: {sample_len}")
 
-exit()
+cnn_input = np.zeros((NUM_CHNNLS, sample_len, num_filters, NUM_CHARS,
+                      NUM_BLOCKS))
+
+eeg = S['eeg'][:, undesired_samples:last_point, :, :]
+for char in range(NUM_CHARS):
+    for blck in range(NUM_BLOCKS):
+        signal_to_filt = eeg[:, :, blck, char]
+        for filt in filterbank:
+            signal_filtered = np.empty((NUM_CHNNLS, sample_len))
+            for channel in range(NUM_CHNNLS):
+                signal_filtered[channel, :] = \
+                    signal.sosfilt(filt, signal_to_filt[channel, :])
+
+            print(signal_to_filt)
+            exit()
+
+    exit()
+#     for chr = 1 : 1 : totalcharacter
+#         for blk = 1 : totalblock
+#             % isolating data before filters; per character and per block
+#             if strcmp(dataset, 'Bench')
+#                 tmp_raw = sub_data(:, :, chr, blk);
+#             elseif strcmp(dataset, 'BETA')
+#                 tmp_raw = sub_data(:, :, blk, chr);
+#                 %else
+#             end
+#             % apply each filter of the filterbank
+#             for i = 1 : subban_no
+#                 processed_signal = zeros(total_channels, sample_length); % Initialization
+#                 % apply to each channel
+#                 for j = 1 : total_channels
+#                     processed_signal(j, :) = filtfilt(bpFilters{i}, tmp_raw(j,:)); % Filtering raw signal with ith bandpass filter
+#                 end
+#                 % AllData(chn, sample points, #filter, chr, blk, subject)
+#                 AllData(:, :, i, chr, blk, subject) = processed_signal;
+#
+#                 y_AllData(1, chr, blk, subject) = chr;
+#             end
+#         end
+#     end
+# end
+# end
 # extract eeg signal from mat file and remove undesired signal samples
 eeg_data = S['eeg']
 
