@@ -67,7 +67,7 @@ S = loadmat("../data/S1_own.mat")
 """
 Creating filterbank. Set of filters to be applied to the signals
 """
-low_freqs_bands = [7, 15, 23, 31, 39]
+low_freqs_bands = [7, 23, 39, 55, 71]
 num_filters = len(low_freqs_bands)
 high_freq_band = 90
 filterbank = []
