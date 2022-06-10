@@ -67,3 +67,5 @@ Each block contains 40 stimuli, one per trial
        1. degree (polar coordinates)
        2. radius (polar coordinates)
        3. channel name
+* 10 10 EEG system
+[[file:./img/eeg_10_10_system.svg]]
