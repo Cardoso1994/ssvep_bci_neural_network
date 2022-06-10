@@ -24,7 +24,7 @@ TOTAL_SUBJECTS = 15  # only testing right now for first 15 subjects
 NUM_BLOCKS = 4
 NUM_CHARS = 40  # number of symbols in screen keyboard
 FS = 250  # sampling rate [Hz]
-SIGNAL_LEN = 2  # lapse to be evaluated in the neural network [s]
+SIGNAL_LEN = 1  # lapse to be evaluated in the neural network [s]
 VISUAL_LATENCY = 0.13  # according to BETA paper
 VISUAL_CUE = 0.5  # time where the target is highlighted before stimulus
 SAMPLE_LEN = FS * SIGNAL_LEN  # number of sample points in the final signal
@@ -42,14 +42,15 @@ CHANNELS_MAP = {'FP1': 0, 'FPZ': 1, 'FP2': 2, 'AF3': 3, 'AF4': 4, 'F7': 5,
                 'PO7': 52, 'PO5': 53, 'PO3': 54, 'POZ': 55, 'PO4': 56,
                 'PO6': 57, 'PO8': 58, 'CB1': 59, 'O1': 60, 'OZ': 61, 'O2': 62,
                 'CB2': 63}
+
 """
 Channel selection
 """
 # only occipital and parietal region
-CHANNELS = [47, 54, 53, 56, 57, 55, 60, 61, 62]
+# CHANNELS = [47, 54, 53, 56, 57, 55, 60, 61, 62]
 # with Broca and Wernicke areas; plus [F7, F5, F3, FT7, FC5, FC3, T7, C5, C3]
-# CHANNELS = [47, 54, 53, 56, 57, 55, 60, 61, 62, 5, 6, 7, 14, 15, 16, 23, 24,
-#             25]
+CHANNELS = [47, 54, 53, 56, 57, 55, 60, 61, 62, 5, 6, 7, 14, 15, 16, 23, 24,
+            25]
 # all channels
 # CHANNELS = [i for i in range(64)]
 NUM_CHNNLS = len(CHANNELS)
