@@ -64,100 +64,103 @@ Mapping characters to indexes
 CHARS_MAP = '.,<abcdefghijklmnopqrstuvwxyz0123456789 '
 CHARS_MAP = {char: i for i, char in enumerate(CHARS_MAP)}
 
-# probando para usuario 1
-S = loadmat("../data/S1_own.mat")
+for i in range(1, 71):
+    S = loadmat(f"../BETA Database/S{i}_own.mat")
+    print(S)
+    exit()
 
-"""
-Creating filterbank. Set of filters to be applied to the signals
-"""
-low_freqs_bands = [7, 23, 39, 55, 71]
-num_filters = len(low_freqs_bands)
-high_freq_band = 90
-filterbank = []
-for low_freq in low_freqs_bands:
-    filterbank.append(signal.butter(FILTER_DEGREE, (low_freq, high_freq_band),
-                                    btype='bandpass', fs=FS, output='sos'))
+    """
+    Creating filterbank. Set of filters to be applied to the signals
+    Every other harmonic
+    """
+    low_freqs_bands = [7, 23, 39, 55, 71]
+    num_filters = len(low_freqs_bands)
+    high_freq_band = 90
+    filterbank = []
+    for low_freq in low_freqs_bands:
+        filterbank.append(signal.butter(FILTER_DEGREE, (low_freq,
+                                                        high_freq_band),
+                                        btype='bandpass', fs=FS, output='sos'))
 
-"""
-apply filters to each signal, per channel, per block, per character
-"""
-# undesired_samples = floor((VISUAL_CUE + VISUAL_LATENCY) * FS)
-undesired_samples = floor((VISUAL_CUE) * FS)
-# undesired_samples = 0
-last_point = undesired_samples + ceil(SAMPLE_LEN)
-sample_len = last_point - undesired_samples
+    """
+    apply filters to each signal, per channel, per block, per character
+    """
+    # undesired_samples = floor((VISUAL_CUE + VISUAL_LATENCY) * FS)
+    undesired_samples = floor((VISUAL_CUE) * FS)
+    # undesired_samples = 0
+    last_point = undesired_samples + ceil(SAMPLE_LEN)
+    sample_len = last_point - undesired_samples
 
-cnn_input = np.zeros((NUM_CHNNLS, sample_len, num_filters, NUM_CHARS,
-                      NUM_BLOCKS))
+    cnn_input = np.zeros((NUM_CHNNLS, sample_len, num_filters, NUM_CHARS,
+                        NUM_BLOCKS))
 
-cnn_output = np.zeros((NUM_CHARS, NUM_BLOCKS))  # this might actually go away
+    cnn_output = np.zeros((NUM_CHARS, NUM_BLOCKS))  # this might actually go away
 
-chan_1 = 5
-block_1 = 0
-char_1 = CHARS_MAP[' ']
+    chan_1 = 5
+    block_1 = 0
+    char_1 = CHARS_MAP[' ']
 
-chan_2 = 10
-block_2 = 0
-char_2 = CHARS_MAP[' ']
+    chan_2 = 10
+    block_2 = 0
+    char_2 = CHARS_MAP[' ']
 
-eeg = S['eeg'][CHANNELS, undesired_samples:last_point, :, :]
+    eeg = S['eeg'][CHANNELS, undesired_samples:last_point, :, :]
 
-fig, ax = plt.subplots(2)
-X = scipy.fft.rfft(eeg[chan_1, :, block_1, char_1])
-freqs = scipy.fft.rfftfreq(eeg[chan_1, :, block_1, char_1].shape[0], d=1/FS)
-ax[0].plot(freqs, np.abs(X))
-X = scipy.fft.rfft(eeg[chan_2, :, block_2, char_2])
-freqs = scipy.fft.rfftfreq(eeg[chan_2, :, block_2, char_2].shape[0], d=1/FS)
-ax[1].plot(freqs, np.abs(X))
+    fig, ax = plt.subplots(2)
+    X = scipy.fft.rfft(eeg[chan_1, :, block_1, char_1])
+    freqs = scipy.fft.rfftfreq(eeg[chan_1, :, block_1, char_1].shape[0], d=1/FS)
+    ax[0].plot(freqs, np.abs(X))
+    X = scipy.fft.rfft(eeg[chan_2, :, block_2, char_2])
+    freqs = scipy.fft.rfftfreq(eeg[chan_2, :, block_2, char_2].shape[0], d=1/FS)
+    ax[1].plot(freqs, np.abs(X))
 
-for char in range(NUM_CHARS):
-    for blck in range(NUM_BLOCKS):
-        signal_to_filt = eeg[:, :, blck, char]
-        for filt_num, filt in enumerate(filterbank):
-            signal_filtered = np.zeros((NUM_CHNNLS, sample_len))
-            for channel in range(NUM_CHNNLS):
-                signal_filtered[channel, :] = \
-                    signal.sosfilt(filt, signal_to_filt[channel, :])
-            cnn_input[:, :, filt_num, char, blck] = signal_filtered
-            cnn_output[char, blck] = char
+    for char in range(NUM_CHARS):
+        for blck in range(NUM_BLOCKS):
+            signal_to_filt = eeg[:, :, blck, char]
+            for filt_num, filt in enumerate(filterbank):
+                signal_filtered = np.zeros((NUM_CHNNLS, sample_len))
+                for channel in range(NUM_CHNNLS):
+                    signal_filtered[channel, :] = \
+                        signal.sosfilt(filt, signal_to_filt[channel, :])
+                cnn_input[:, :, filt_num, char, blck] = signal_filtered
+                cnn_output[char, blck] = char
 
-"""
-plotting the different filters applied to the signals
-ideally each filter tries to leave behind some harmonics of the signal
-"""
-fig, ax = plt.subplots(6, 2)
-ax[0, 0].set_title('Occipital')
-ax[0, 0].plot(eeg[chan_1, :, block_1, char_1])
-ax[1, 0].plot(cnn_input[chan_1, :, 0, char_1, block_1])
-ax[2, 0].plot(cnn_input[chan_1, :, 1, char_1, block_1])
-ax[3, 0].plot(cnn_input[chan_1, :, 2, char_1, block_1])
-ax[4, 0].plot(cnn_input[chan_1, :, 3, char_1, block_1])
-ax[5, 0].plot(cnn_input[chan_1, :, 4, char_1, block_1])
+    """
+    plotting the different filters applied to the signals
+    ideally each filter tries to leave behind some harmonics of the signal
+    """
+    fig, ax = plt.subplots(6, 2)
+    ax[0, 0].set_title('Occipital')
+    ax[0, 0].plot(eeg[chan_1, :, block_1, char_1])
+    ax[1, 0].plot(cnn_input[chan_1, :, 0, char_1, block_1])
+    ax[2, 0].plot(cnn_input[chan_1, :, 1, char_1, block_1])
+    ax[3, 0].plot(cnn_input[chan_1, :, 2, char_1, block_1])
+    ax[4, 0].plot(cnn_input[chan_1, :, 3, char_1, block_1])
+    ax[5, 0].plot(cnn_input[chan_1, :, 4, char_1, block_1])
 
-ax[0, 1].set_title('Broca Area')
-ax[0, 1].plot(eeg[chan_2, :, block_2, char_2])
-ax[1, 1].plot(cnn_input[chan_2, :, 0, char_2, block_2])
-ax[2, 1].plot(cnn_input[chan_2, :, 1, char_2, block_2])
-ax[3, 1].plot(cnn_input[chan_2, :, 2, char_2, block_2])
-ax[4, 1].plot(cnn_input[chan_2, :, 3, char_2, block_2])
-ax[5, 1].plot(cnn_input[chan_2, :, 4, char_2, block_2])
+    ax[0, 1].set_title('Broca Area')
+    ax[0, 1].plot(eeg[chan_2, :, block_2, char_2])
+    ax[1, 1].plot(cnn_input[chan_2, :, 0, char_2, block_2])
+    ax[2, 1].plot(cnn_input[chan_2, :, 1, char_2, block_2])
+    ax[3, 1].plot(cnn_input[chan_2, :, 2, char_2, block_2])
+    ax[4, 1].plot(cnn_input[chan_2, :, 3, char_2, block_2])
+    ax[5, 1].plot(cnn_input[chan_2, :, 4, char_2, block_2])
 
-"""
-Plotting average of occipital vs broca areas
-"""
-fig, ax = plt.subplots(6, 2)
-_x1_ = np.mean(S['eeg'][(47, 54, 53, 56, 57, 55, 60, 61, 62),
-                        undesired_samples:last_point, 0, char_1], axis=0)
-_x2_ = np.mean(S['eeg'][(5, 6, 7, 14, 15, 16, 23, 24, 25),
-                        undesired_samples:last_point, 0, char_1], axis=0)
-ax[0, 0].set_title('occipital summing')
-ax[0, 0].plot(_x1_)
-ax[0, 1].set_title('broca summing')
-ax[0, 1].plot(_x2_)
-for filt_num, filt in enumerate(filterbank):
-    s1 = signal.sosfilt(filt, _x1_)
-    ax[filt_num + 1, 0].plot(s1)
-    s2 = signal.sosfilt(filt, _x2_)
-    ax[filt_num + 1, 1].plot(s2)
-plt.show()
-exit()
+    """
+    Plotting average of occipital vs broca areas
+    """
+    fig, ax = plt.subplots(6, 2)
+    _x1_ = np.mean(S['eeg'][(47, 54, 53, 56, 57, 55, 60, 61, 62),
+                            undesired_samples:last_point, 0, char_1], axis=0)
+    _x2_ = np.mean(S['eeg'][(5, 6, 7, 14, 15, 16, 23, 24, 25),
+                            undesired_samples:last_point, 0, char_1], axis=0)
+    ax[0, 0].set_title('occipital summing')
+    ax[0, 0].plot(_x1_)
+    ax[0, 1].set_title('broca summing')
+    ax[0, 1].plot(_x2_)
+    for filt_num, filt in enumerate(filterbank):
+        s1 = signal.sosfilt(filt, _x1_)
+        ax[filt_num + 1, 0].plot(s1)
+        s2 = signal.sosfilt(filt, _x2_)
+        ax[filt_num + 1, 1].plot(s2)
+    plt.show()
