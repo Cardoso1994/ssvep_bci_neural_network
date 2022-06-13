@@ -25,6 +25,8 @@ import matplotlib.pyplot as plt
 import numpy as np
 import torch
 
+import bci
+
 np.set_printoptions(2)
 
 """
@@ -64,9 +66,41 @@ Main code
 
 # BETA has 70 subjects. Select 4 randomly for training. Test in the rest of
 # subjects
-subjects = [i for i in range(70)]
-random.shuffle(subjects)
-train_subjects = subjects[:SUBJECTS_FOR_TRAIN]
-test_subjects = subjects[SUBJECTS_FOR_TRAIN:]
+# subjects = [i for i in range(70)]
+# random.shuffle(subjects)
+# train_subjects = subjects[:SUBJECTS_FOR_TRAIN]
+# test_subjects = subjects[SUBJECTS_FOR_TRAIN:]
+#
+# print("In main: TODO")
 
-print("In main: TODO")
+eeg_inputs = []
+eeg_outputs = []
+for i in range(10, 20):
+    eeg_inputs.append(np.load(f"/home/cardoso/garbage/S{i}_input.npy"))
+    eeg_outputs.append(np.load(f"/home/cardoso/garbage/S{i}_output.npy"))
+
+input_shape = eeg_inputs[0].shape
+# first three dimensions are the same, then we multiply by 40 chars and 4
+# blocks, as well as by the number of subjects
+# (18, 250, 5, 40, 4)
+_ds_ = np.zeros((input_shape[0], input_shape[1], input_shape[2],
+                 40 * 4 * len(eeg_inputs)))
+_labels_ = np.zeros(40 * 4 * len(eeg_inputs))
+_ds_[:, :, :, :] = np.inf
+for subject in range(len(eeg_inputs)):  # number of subjects
+    for blck in range(4):  # number of blocks
+        for char in range(40):  # number of characters
+            _ds_[:, :, :, subject * 160 + blck * 40 + char] = \
+                eeg_inputs[subject][:, :, :, char, blck]
+            _labels_[subject * 160 + blck * 40 + char] = \
+                eeg_outputs[subject][char, blck]
+
+print(f"Checking if all elements are different from {np.inf}: "
+      + f"{np.all(_ds_ != np.inf)}")
+
+"""
+Testing for dataset creation
+"""
+ds = bci.beta_dataset(_ds_, _labels_)
+print(np.all(_ds_[:, :, :, 12] == ds[12]))
+
