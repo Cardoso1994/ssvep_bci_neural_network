@@ -10,7 +10,10 @@ References
         benchmark database toward ssvep-bci application", Frontiers in
         Neuroscience, vol. 14, p. 627, 2020.
 """
+
 from math import floor, ceil
+import os
+
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -22,6 +25,7 @@ from scipy import signal
 
 # np.set_printoptions(2)
 
+OUT_PATH = os.path.join("/", "home", "cardoso", "garbage")
 WHOLE_SAMPLE = False
 TOTAL_SUBJECTS = 15  # only testing right now for first 15 subjects
 NUM_BLOCKS = 4
@@ -50,12 +54,27 @@ CHANNELS_MAP = {'FP1': 0, 'FPZ': 1, 'FP2': 2, 'AF3': 3, 'AF4': 4, 'F7': 5,
 Channel selection
 """
 # only occipital and parietal region
+# CONF = "occ"
 # CHANNELS = [47, 54, 53, 56, 57, 55, 60, 61, 62]
-# with Broca and Wernicke areas; plus [F7, F5, F3, FT7, FC5, FC3, T7, C5, C3]
-CHANNELS = [47, 54, 53, 56, 57, 55, 60, 61, 62, 5, 6, 7, 14, 15, 16, 23, 24,
-            25]
+
+# with Broca area; plus [F7, F5, F3, FT7, FC5, FC3, T7, C5, C3]
+# CONF = "broca_occ"
+# CHANNELS = [47, 54, 53, 56, 57, 55, 60, 61, 62, 5, 6, 7, 14, 15, 16, 23, 24,
+#             25]
+
+# with Wernicke area; plus [T7, C5, C3, TP7, CP5, CP3, P7, P5, P3]
+# CONF = "wernicke_occ"
+# CHANNELS = [47, 54, 53, 56, 57, 55, 60, 61, 62, 23, 24, 25, 33, 34, 35, 43, 44,
+#             45]
+
+# with Broca and Wernicke areas
+# CONF = "broca_and_wernicke_occ"
+# CHANNELS = [47, 54, 53, 56, 57, 55, 60, 61, 62, 5, 6, 7, 14, 15, 16, 23, 24,
+#             25, 33, 34, 35, 43, 44, 45]
+
 # all channels
-# CHANNELS = [i for i in range(64)]
+CONF = "all"
+CHANNELS = [i for i in range(64)]
 NUM_CHNNLS = len(CHANNELS)
 
 """
@@ -64,8 +83,7 @@ Mapping characters to indexes
 CHARS_MAP = '.,<abcdefghijklmnopqrstuvwxyz0123456789 '
 CHARS_MAP = {char: i for i, char in enumerate(CHARS_MAP)}
 
-# for i in range(1, 71):
-for i in range(10, 20):
+for i in range(1, 71):
     S = loadmat(f"../BETA Database/S{i}_own.mat")
 
     """
@@ -93,7 +111,7 @@ for i in range(10, 20):
     cnn_input = np.zeros((NUM_CHNNLS, sample_len, num_filters, NUM_CHARS,
                         NUM_BLOCKS))
 
-    cnn_output = np.zeros((NUM_CHARS, NUM_BLOCKS))  # this might actually go away
+    cnn_output = np.zeros((NUM_CHARS, NUM_BLOCKS))
 
     chan_1 = 5
     block_1 = 0
@@ -105,15 +123,15 @@ for i in range(10, 20):
 
     eeg = S['eeg'][CHANNELS, undesired_samples:last_point, :, :]
 
-    fig, ax = plt.subplots(2)
-    X = scipy.fft.rfft(eeg[chan_1, :, block_1, char_1])
-    freqs = scipy.fft.rfftfreq(eeg[chan_1, :, block_1, char_1].shape[0],
-                               d=1/FS)
-    ax[0].plot(freqs, np.abs(X))
-    X = scipy.fft.rfft(eeg[chan_2, :, block_2, char_2])
-    freqs = scipy.fft.rfftfreq(eeg[chan_2, :, block_2, char_2].shape[0],
-                               d=1/FS)
-    ax[1].plot(freqs, np.abs(X))
+    # fig, ax = plt.subplots(2)
+    # X = scipy.fft.rfft(eeg[chan_1, :, block_1, char_1])
+    # freqs = scipy.fft.rfftfreq(eeg[chan_1, :, block_1, char_1].shape[0],
+    #                            d=1/FS)
+    # ax[0].plot(freqs, np.abs(X))
+    # X = scipy.fft.rfft(eeg[chan_2, :, block_2, char_2])
+    # freqs = scipy.fft.rfftfreq(eeg[chan_2, :, block_2, char_2].shape[0],
+    #                            d=1/FS)
+    # ax[1].plot(freqs, np.abs(X))
 
     for char in range(NUM_CHARS):
         for blck in range(NUM_BLOCKS):
@@ -125,6 +143,12 @@ for i in range(10, 20):
                         signal.sosfilt(filt, signal_to_filt[channel, :])
                 cnn_input[:, :, filt_num, char, blck] = signal_filtered
                 cnn_output[char, blck] = char
+
+    """
+    Saving cnn_input and cnn_output to npy binary files
+    """
+    np.save(os.path.join(OUT_PATH, f"S{i}_input_{CONF}.npy"), cnn_input)
+    np.save(os.path.join(OUT_PATH, f"S{i}_output_{CONF}.npy"), cnn_output)
 
     """
     plotting the different filters applied to the signals
@@ -166,8 +190,3 @@ for i in range(10, 20):
     #     ax[filt_num + 1, 1].plot(s2)
     # plt.show()
 
-    """
-    Saving cnn_input and cnn_output to npy binary files
-    """
-    np.save(f"/home/cardoso/garbage/S{i}_input.npy", cnn_input)
-    np.save(f"/home/cardoso/garbage/S{i}_output.npy", cnn_output)
