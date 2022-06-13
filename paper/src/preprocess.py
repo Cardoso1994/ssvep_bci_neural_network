@@ -5,19 +5,22 @@ Test for a Neural Network implementation for the BETA Database BCI.
 Developer: Marco Antonio Cardoso Moreno (mcardosom2021@cic.ipn.mx
                                          marcoacardosom@gmail.com)
 
-[1] B. Liu, X. Huang, Y. Wang, X. Chen, and X. Gao, “Beta: A large
-        benchmark database toward ssvep-bci application,” Frontiers in
+References
+[1] B. Liu, X. Huang, Y. Wang, X. Chen, and X. Gao, "Beta: A large
+        benchmark database toward ssvep-bci application", Frontiers in
         Neuroscience, vol. 14, p. 627, 2020.
 """
 from math import floor, ceil
 
 import matplotlib.pyplot as plt
 import numpy as np
-import scipy.fft
+# import scipy.fft
+from scipy import fft
 from scipy.io import loadmat
-import scipy.signal as signal
+# import scipy.signal as signal
+from scipy import signal
 
-np.set_printoptions(2)
+# np.set_printoptions(2)
 
 WHOLE_SAMPLE = False
 TOTAL_SUBJECTS = 15  # only testing right now for first 15 subjects
@@ -158,23 +161,3 @@ for filt_num, filt in enumerate(filterbank):
     ax[filt_num + 1, 1].plot(s2)
 plt.show()
 exit()
-
-fft_eeg = scipy.fft.rfft(example_signal)
-freqs = scipy.fft.rfftfreq(example_signal.shape[0], d=1/FS)
-
-plt.figure(1)
-plt.plot(example_signal)
-
-plt.figure(2)
-plt.plot(freqs, np.abs(fft_eeg))
-plt.xlabel("Frequency [Hz]")
-
-band_freqs = (1, 90)
-sos = signal.butter(5, band_freqs, btype='bandpass',
-                    fs=FS, output='sos')
-other_array = signal.sosfilt(sos, example_signal)
-
-plt.figure(1)
-plt.plot(other_array)
-
-plt.show()
