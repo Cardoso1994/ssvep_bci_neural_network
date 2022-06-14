@@ -1,0 +1,15 @@
+name: dnn_pytorch
+channels:
+  - defaults
+  - anaconda
+  - conda-forge
+  - pytorch
+dependencies:
+  - python=3.8
+  - scipy
+  - numpy
+  - matplotlib
+  - ipython
+  - pytorch-gpu
+  - torchvision
+  - torchaudio
