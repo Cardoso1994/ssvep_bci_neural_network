@@ -19,6 +19,7 @@ Developer: Marco Antonio Cardoso Moreno (mcardosom2021@cic.ipn.mx
         Neuroscience, vol. 14, p. 627, 2020.
 """
 
+import os
 import random
 
 import matplotlib.pyplot as plt
@@ -32,75 +33,98 @@ np.set_printoptions(2)
 """
 GLOBAL VARIABLES
 """
-WHOLE_SAMPLE = False
-TOTAL_SUBJECTS = 15  # only testing right now for first 15 subjects
+TOTAL_SUBJECTS = 70  # only testing right now for first 15 subjects
 NUM_BLOCKS = 4
 NUM_CHARS = 40  # number of symbols in screen keyboard
-FS = 250  # sampling rate [Hz]
-SIGNAL_LEN = 1  # lapse to be evaluated in the neural network [s]
-VISUAL_LATENCY = 0.13  # according to BETA paper
-VISUAL_CUE = 0.5  # time where the target is highlighted before stimulus
-SAMPLE_LEN = FS * SIGNAL_LEN  # number of sample points in the final signal
 MAX_EPOCHS = 100
-FILTER_DEGREE = 3
-CHANNELS_MAP = {'FP1': 0, 'FPZ': 1, 'FP2': 2, 'AF3': 3, 'AF4': 4, 'F7': 5,
-                'F5': 6, 'F3': 7, 'F1': 8, 'FZ': 9, 'F2': 10, 'F4': 11,
-                'F6': 12, 'F8': 13, 'FT7': 14, 'FC5': 15, 'FC3': 16, 'FC1': 17,
-                'FCZ': 18, 'FC2': 19, 'FC4': 20, 'FC6': 21, 'FT8': 22,
-                'T7': 23, 'C5': 24, 'C3': 25, 'C1': 26, 'CZ': 27, 'C2': 28,
-                'C4': 29, 'C6': 30, 'T8': 31, 'M1': 32, 'TP7': 33, 'CP5': 34,
-                'CP3': 35, 'CP1': 36, 'CPZ': 37, 'CP2': 38, 'CP4': 39,
-                'CP6': 40, 'TP8': 41, 'M2': 42, 'P7': 43, 'P5': 44, 'P3': 45,
-                'P1': 46, 'PZ': 47, 'P2': 48, 'P4': 49, 'P6': 50, 'P8': 51,
-                'PO7': 52, 'PO5': 53, 'PO3': 54, 'POZ': 55, 'PO4': 56,
-                'PO6': 57, 'PO8': 58, 'CB1': 59, 'O1': 60, 'OZ': 61, 'O2': 62,
-                'CB2': 63}
-CHARS_MAP = '.,<abcdefghijklmnopqrstuvwxyz0123456789 '
-CHARS_MAP = {char: i for i, char in enumerate(CHARS_MAP)}
 
 SUBJECTS_FOR_TRAIN = 4
+SUBJECTS_FOR_VAL = 1
+
+DEVICE = 'cuda' if torch.cuda.is_available() else 'cpu'
 
 """
 Main code
 """
 
-# BETA has 70 subjects. Select 4 randomly for training. Test in the rest of
-# subjects
-# subjects = [i for i in range(70)]
-# random.shuffle(subjects)
-# train_subjects = subjects[:SUBJECTS_FOR_TRAIN]
-# test_subjects = subjects[SUBJECTS_FOR_TRAIN:]
-#
-# print("In main: TODO")
+ELECTRODE_CONFIGURATION = "occ"
+file_suffix = f"_{ELECTRODE_CONFIGURATION}.npy"
+data_location = os.path.join("..", "BETA_database",
+                             f"BETA_{ELECTRODE_CONFIGURATION}")
 
-eeg_inputs = []
-eeg_outputs = []
-for i in range(10, 20):
-    eeg_inputs.append(np.load(f"/home/cardoso/garbage/S{i}_input.npy"))
-    eeg_outputs.append(np.load(f"/home/cardoso/garbage/S{i}_output.npy"))
+"""
+PREPARING TRAINING DATASET
+"""
+train_inputs = []
+train_outputs = []
+for i in range(1, SUBJECTS_FOR_TRAIN + 1):
+    train_inputs.append(np.load(os.path.join(data_location,
+                                           f"S{i}_input{file_suffix}")))
+    train_outputs.append(np.load(os.path.join(data_location,
+                                           f"S{i}_output{file_suffix}")))
 
-input_shape = eeg_inputs[0].shape
+input_shape = train_inputs[0].shape
+num_channels = train_inputs[0].shape[0]
 # first three dimensions are the same, then we multiply by 40 chars and 4
 # blocks, as well as by the number of subjects
 # (18, 250, 5, 40, 4)
 _ds_ = np.zeros((input_shape[0], input_shape[1], input_shape[2],
-                 40 * 4 * len(eeg_inputs)))
-_labels_ = np.zeros(40 * 4 * len(eeg_inputs))
+                 NUM_CHARS * NUM_BLOCKS * len(train_inputs)))
+_labels_ = np.zeros(NUM_CHARS * NUM_BLOCKS * len(train_inputs))
 _ds_[:, :, :, :] = np.inf
-for subject in range(len(eeg_inputs)):  # number of subjects
-    for blck in range(4):  # number of blocks
-        for char in range(40):  # number of characters
-            _ds_[:, :, :, subject * 160 + blck * 40 + char] = \
-                eeg_inputs[subject][:, :, :, char, blck]
-            _labels_[subject * 160 + blck * 40 + char] = \
-                eeg_outputs[subject][char, blck]
 
-print(f"Checking if all elements are different from {np.inf}: "
-      + f"{np.all(_ds_ != np.inf)}")
+for subject in range(SUBJECTS_FOR_TRAIN):  # number of subjects
+    for blck in range(NUM_BLOCKS):  # number of blocks
+        for char in range(NUM_CHARS):  # number of characters
+            _ds_[:, :, :, subject * 160 + blck * NUM_CHARS + char] = \
+                train_inputs[subject][:, :, :, char, blck]
+            _labels_[subject * 160 + blck * NUM_CHARS + char] = \
+                train_outputs[subject][char, blck]
+
+train_ds = bci.beta_dataset(_ds_, _labels_)
+train_dl = torch.utils.data.DataLoader(train_ds, batch_size=16, shuffle=True)
 
 """
-Testing for dataset creation
+PREPARING VALIDATION DATASET
 """
-ds = bci.beta_dataset(_ds_, _labels_)
-print(np.all(_ds_[:, :, :, 12] == ds[12]))
+val_inputs = []
+val_outputs = []
+for i in range(SUBJECTS_FOR_TRAIN + 1,
+               SUBJECTS_FOR_TRAIN + SUBJECTS_FOR_VAL + 1):
+    val_inputs.append(np.load(os.path.join(data_location,
+                                           f"S{i}_input{file_suffix}")))
+    val_outputs.append(np.load(os.path.join(data_location,
+                                           f"S{i}_output{file_suffix}")))
 
+input_shape = val_inputs[0].shape
+# first three dimensions are the same, then we multiply by 40 chars and 4
+# blocks, as well as by the number of subjects
+# (18, 250, 5, 40, 1)
+# the 5 filters are the channels in this context
+# For each of the filters, each one representing a '2D sheet':
+#   - the number of EEG channels are the first dimension (analogous to rows)
+#   - the sample poinst are the second dimension (analogous to columns)
+_ds_ = np.zeros((input_shape[2], input_shape[0], input_shape[1],
+                 NUM_CHARS * NUM_BLOCKS * len(val_inputs)))
+_labels_ = np.zeros(NUM_CHARS * NUM_BLOCKS * len(val_inputs))
+_ds_[:, :, :, :] = np.inf
+
+for subject in range(SUBJECTS_FOR_VAL):  # number of subjects
+    for blck in range(NUM_BLOCKS):  # number of blocks
+        for char in range(NUM_CHARS):  # number of characters
+            _ds_[:, :, :, subject * 160 + blck * NUM_CHARS + char] = \
+                val_inputs[subject][:, :, :, char, blck]
+            _labels_[subject * 160 + blck * NUM_CHARS + char] = \
+                val_outputs[subject][char, blck]
+
+val_ds = bci.beta_dataset(_ds_, _labels_)
+val_dl = torch.utils.data.DataLoader(val_ds, batch_size=16, shuffle=True)
+exit()
+
+bci_net = bci.bci_cnn().to(device=DEVICE)
+
+n_epochs = 10
+optimizer = torch.optim.Adam(bci_net.parameters(), lr=0.002)
+loss_fn = torch.nn.CrossEntropyLoss()
+
+bci.training_loop(n_epochs, optimizer, bci_net, loss_fn, train_dl, DEVICE)
