@@ -17,15 +17,18 @@ import torch.nn as nn
 import torch.nn.functional as F
 import torch.optim as optim
 
+
 class bci_cnn(nn.Module):
     """
     Definition of the convolutional neural network used for SSVEP-BCI systems.
 
     Loss function at page 187!!!
     """
+
     def __init__(self):
+        """Convolutional Neural Network definition."""
         super().__init__()
-        self.conv1 = nn.Conv2d(5, 2, kernel_size=1, padding=1)
+        self.conv1 = nn.Conv2d(5, 2, kernel_size=1, padding=1).double()
         self.act1 = nn.Tanh()
         self.conv2 = nn.Conv2d(2, 1, kernel_size=1, padding=1)
         self.act2 = nn.Tanh()
@@ -35,12 +38,11 @@ class bci_cnn(nn.Module):
         # self.act3 = nn.Tanh()
         # self.fc2 = nn.Linear(32, 2)
 
-
     def forward(self, x):
-        print("\n\n\nBEFORE FORWARD PASS\n\n\n")
-        print(self.conv1(x))
+        """Convolutional Neural Network forward pass."""
         out = self.act1(self.conv1(x))
         print(out)
+        exit()
         out = self.act2(self.conv2(x))
         # out = self.pool1(self.act1(self.conv1(x)))
         # out = self.pool2(self.act2(self.conv2(out)))
@@ -51,10 +53,10 @@ class bci_cnn(nn.Module):
 
 
 class beta_dataset(torch.utils.data.Dataset):
+    """Create a dataset from the BETA database for SSVEP BCI."""
+
     def __init__(self, eeg_signals, labels):
         """
-        Create a dataset from the BETA database for SSVEP BCI
-
         Parameters
         ----------
         signals : np.array
@@ -63,7 +65,7 @@ class beta_dataset(torch.utils.data.Dataset):
                 - samples: a sample in each timestep
                 - num of filters: number of bandpass filters applied
                 - number of tests in bci. Ideally, there is a pattern per
-                  character, per block, per subject. At least for training
+                character, per block, per subject. At least for training
         labels : np.array
             array containing all labels for each pattern in 'signals'. With
             shape:
@@ -83,13 +85,12 @@ class beta_dataset(torch.utils.data.Dataset):
         else:
             self.labels = torch.tensor(labels)
 
-
     def __len__(self):
         """Return number of patterns in dataset."""
         return self.eeg_signals.shape[3]
 
-
     def __getitem__(self, idx):
+        """Return dataset element at index `index`."""
         if torch.is_tensor(idx) or isinstance(idx, np.ndarray):
             idx = idx.tolist()
 
@@ -97,6 +98,7 @@ class beta_dataset(torch.utils.data.Dataset):
 
 
 def training_loop(n_epochs, optimizer, model, loss_fn, train_loader, device):
+    """Training loop definition."""
     for epoch in range(1, n_epochs + 1):
         loss_train = 0.0
         for signals, labels in train_loader:

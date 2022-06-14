@@ -60,9 +60,9 @@ train_inputs = []
 train_outputs = []
 for i in range(1, SUBJECTS_FOR_TRAIN + 1):
     train_inputs.append(np.load(os.path.join(data_location,
-                                           f"S{i}_input{file_suffix}")))
+                                             f"S{i}_input{file_suffix}")))
     train_outputs.append(np.load(os.path.join(data_location,
-                                           f"S{i}_output{file_suffix}")))
+                                              f"S{i}_output{file_suffix}")))
 
 input_shape = train_inputs[0].shape
 # num_channels = train_inputs[0].shape[0]
@@ -98,7 +98,7 @@ for i in range(SUBJECTS_FOR_TRAIN + 1,
     val_inputs.append(np.load(os.path.join(data_location,
                                            f"S{i}_input{file_suffix}")))
     val_outputs.append(np.load(os.path.join(data_location,
-                                           f"S{i}_output{file_suffix}")))
+                                            f"S{i}_output{file_suffix}")))
 
 # first three dimensions are the same, then we multiply by 40 chars and 4
 # blocks, as well as by the number of subjects
@@ -120,7 +120,6 @@ for subject in range(SUBJECTS_FOR_VAL):  # number of subjects
             _labels_[subject * NUM_BLOCKS * NUM_CHARS
                      + blck * NUM_CHARS + char] = \
                 val_outputs[subject][char, blck]
-print(f"All elements of ds are different of inf: {np.all(_ds_ != np.inf)}")
 
 val_ds = bci.beta_dataset(_ds_, _labels_)
 val_dl = torch.utils.data.DataLoader(val_ds, batch_size=16, shuffle=True)
