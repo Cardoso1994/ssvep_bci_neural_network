@@ -54,8 +54,8 @@ CHANNELS_MAP = {'FP1': 0, 'FPZ': 1, 'FP2': 2, 'AF3': 3, 'AF4': 4, 'F7': 5,
 Channel selection
 """
 # only occipital and parietal region
-# CONF = "occ"
-# CHANNELS = [47, 54, 53, 56, 57, 55, 60, 61, 62]
+CONF = "occ"
+CHANNELS = [47, 54, 53, 56, 57, 55, 60, 61, 62]
 
 # with Broca area; plus [F7, F5, F3, FT7, FC5, FC3, T7, C5, C3]
 # CONF = "broca_occ"
@@ -73,8 +73,8 @@ Channel selection
 #             25, 33, 34, 35, 43, 44, 45]
 
 # all channels
-CONF = "all"
-CHANNELS = [i for i in range(64)]
+# CONF = "all"
+# CHANNELS = [i for i in range(64)]
 NUM_CHNNLS = len(CHANNELS)
 
 """
@@ -108,9 +108,10 @@ for i in range(1, 71):
     last_point = undesired_samples + ceil(SAMPLE_LEN)
     sample_len = last_point - undesired_samples
 
-    cnn_input = np.zeros((NUM_CHNNLS, sample_len, num_filters, NUM_CHARS,
-                        NUM_BLOCKS))
-    cnn_input = np.zeros((num_filters))
+    # cnn_input = np.zeros((NUM_CHNNLS, sample_len, num_filters, NUM_CHARS,
+    #                     NUM_BLOCKS))
+    cnn_input = np.zeros((num_filters, NUM_CHNNLS, sample_len, NUM_CHARS,
+                          NUM_BLOCKS))
 
     cnn_output = np.zeros((NUM_CHARS, NUM_BLOCKS))
 
@@ -142,7 +143,8 @@ for i in range(1, 71):
                 for channel in range(NUM_CHNNLS):
                     signal_filtered[channel, :] = \
                         signal.sosfilt(filt, signal_to_filt[channel, :])
-                cnn_input[:, :, filt_num, char, blck] = signal_filtered
+                # cnn_input[:, :, filt_num, char, blck] = signal_filtered
+                cnn_input[filt_num, :, :, char, blck] = signal_filtered
                 cnn_output[char, blck] = char
 
     """
