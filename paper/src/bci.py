@@ -37,6 +37,8 @@ class bci_cnn(nn.Module):
 
 
     def forward(self, x):
+        print("\n\n\nBEFORE FORWARD PASS\n\n\n")
+        print(self.conv1(x))
         out = self.act1(self.conv1(x))
         print(out)
         out = self.act2(self.conv2(x))

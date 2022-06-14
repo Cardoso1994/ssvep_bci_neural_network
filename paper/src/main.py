@@ -42,6 +42,7 @@ SUBJECTS_FOR_TRAIN = 4
 SUBJECTS_FOR_VAL = 1
 
 DEVICE = 'cuda' if torch.cuda.is_available() else 'cpu'
+print(f"Device where pytorch will execute: {DEVICE}")
 
 """
 Main code
@@ -64,21 +65,24 @@ for i in range(1, SUBJECTS_FOR_TRAIN + 1):
                                            f"S{i}_output{file_suffix}")))
 
 input_shape = train_inputs[0].shape
-num_channels = train_inputs[0].shape[0]
+# num_channels = train_inputs[0].shape[0]
 # first three dimensions are the same, then we multiply by 40 chars and 4
 # blocks, as well as by the number of subjects
-# (18, 250, 5, 40, 4)
+# (num_filters, num_eeg_channels, sample_points, chars, blocks)
+# (5, 9, 250, 40, 4)
 _ds_ = np.zeros((input_shape[0], input_shape[1], input_shape[2],
-                 NUM_CHARS * NUM_BLOCKS * len(train_inputs)))
-_labels_ = np.zeros(NUM_CHARS * NUM_BLOCKS * len(train_inputs))
+                 NUM_CHARS * NUM_BLOCKS * SUBJECTS_FOR_TRAIN))
+_labels_ = np.zeros(NUM_CHARS * NUM_BLOCKS * SUBJECTS_FOR_TRAIN)
 _ds_[:, :, :, :] = np.inf
 
 for subject in range(SUBJECTS_FOR_TRAIN):  # number of subjects
     for blck in range(NUM_BLOCKS):  # number of blocks
         for char in range(NUM_CHARS):  # number of characters
-            _ds_[:, :, :, subject * 160 + blck * NUM_CHARS + char] = \
+            _ds_[:, :, :, subject * NUM_BLOCKS * NUM_CHARS
+                 + blck * NUM_CHARS + char] = \
                 train_inputs[subject][:, :, :, char, blck]
-            _labels_[subject * 160 + blck * NUM_CHARS + char] = \
+            _labels_[subject * NUM_BLOCKS * NUM_CHARS
+                     + blck * NUM_CHARS + char] = \
                 train_outputs[subject][char, blck]
 
 train_ds = bci.beta_dataset(_ds_, _labels_)
@@ -96,30 +100,30 @@ for i in range(SUBJECTS_FOR_TRAIN + 1,
     val_outputs.append(np.load(os.path.join(data_location,
                                            f"S{i}_output{file_suffix}")))
 
-input_shape = val_inputs[0].shape
 # first three dimensions are the same, then we multiply by 40 chars and 4
 # blocks, as well as by the number of subjects
-# (18, 250, 5, 40, 1)
-# the 5 filters are the channels in this context
-# For each of the filters, each one representing a '2D sheet':
-#   - the number of EEG channels are the first dimension (analogous to rows)
-#   - the sample poinst are the second dimension (analogous to columns)
-_ds_ = np.zeros((input_shape[2], input_shape[0], input_shape[1],
-                 NUM_CHARS * NUM_BLOCKS * len(val_inputs)))
+# (num_filters, num_eeg_channels, sample_points, chars, blocks)
+# (5, 9, 250, 40, 4)
+# _ds_ = np.zeros((input_shape[2], input_shape[0], input_shape[1],
+#                  NUM_CHARS * NUM_BLOCKS * len(val_inputs)))
+_ds_ = np.zeros((input_shape[0], input_shape[1], input_shape[2],
+                 NUM_CHARS * NUM_BLOCKS * SUBJECTS_FOR_VAL))
 _labels_ = np.zeros(NUM_CHARS * NUM_BLOCKS * len(val_inputs))
 _ds_[:, :, :, :] = np.inf
 
 for subject in range(SUBJECTS_FOR_VAL):  # number of subjects
     for blck in range(NUM_BLOCKS):  # number of blocks
         for char in range(NUM_CHARS):  # number of characters
-            _ds_[:, :, :, subject * 160 + blck * NUM_CHARS + char] = \
+            _ds_[:, :, :, subject * NUM_BLOCKS * NUM_CHARS
+                 + blck * NUM_CHARS + char] = \
                 val_inputs[subject][:, :, :, char, blck]
-            _labels_[subject * 160 + blck * NUM_CHARS + char] = \
+            _labels_[subject * NUM_BLOCKS * NUM_CHARS
+                     + blck * NUM_CHARS + char] = \
                 val_outputs[subject][char, blck]
+print(f"All elements of ds are different of inf: {np.all(_ds_ != np.inf)}")
 
 val_ds = bci.beta_dataset(_ds_, _labels_)
 val_dl = torch.utils.data.DataLoader(val_ds, batch_size=16, shuffle=True)
-exit()
 
 bci_net = bci.bci_cnn().to(device=DEVICE)
 
