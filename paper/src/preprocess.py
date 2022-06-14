@@ -110,6 +110,7 @@ for i in range(1, 71):
 
     cnn_input = np.zeros((NUM_CHNNLS, sample_len, num_filters, NUM_CHARS,
                         NUM_BLOCKS))
+    cnn_input = np.zeros((num_filters))
 
     cnn_output = np.zeros((NUM_CHARS, NUM_BLOCKS))
 
