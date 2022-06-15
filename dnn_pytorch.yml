@@ -10,6 +10,6 @@ dependencies:
   - numpy
   - matplotlib
   - ipython
-  - pytorch-gpu
+  - pytorch-gpu=1.11
   - torchvision
   - torchaudio
