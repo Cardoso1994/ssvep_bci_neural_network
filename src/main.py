@@ -29,6 +29,7 @@ import torch
 import bci
 
 np.set_printoptions(2)
+torch.manual_seed(7)
 
 """
 GLOBAL VARIABLES
@@ -36,8 +37,8 @@ GLOBAL VARIABLES
 TOTAL_SUBJECTS = 70  # only testing right now for first 15 subjects
 NUM_BLOCKS = 4
 NUM_CHARS = 40  # number of symbols in screen keyboard
-MAX_EPOCHS = 100
-MAX_EPOCHS = 150
+NUM_EPOCHS = 100
+NUM_EPOCHS = 150
 
 SUBJECTS_FOR_TRAIN = 15
 SUBJECTS_FOR_VAL = 1
@@ -130,8 +131,7 @@ val_dl = torch.utils.data.DataLoader(val_ds, batch_size=16, shuffle=True)
 
 bci_net = bci.bci_cnn().to(device=DEVICE)
 
-n_epochs = 100
 optimizer = torch.optim.Adam(bci_net.parameters(), lr=0.002)
 loss_fn = torch.nn.CrossEntropyLoss()
 
-bci.training_loop(n_epochs, optimizer, bci_net, loss_fn, train_dl, DEVICE)
+bci.training_loop(NUM_EPOCHS, optimizer, bci_net, loss_fn, train_dl, DEVICE)
