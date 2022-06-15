@@ -37,9 +37,12 @@ TOTAL_SUBJECTS = 70  # only testing right now for first 15 subjects
 NUM_BLOCKS = 4
 NUM_CHARS = 40  # number of symbols in screen keyboard
 MAX_EPOCHS = 100
+MAX_EPOCHS = 150
 
-SUBJECTS_FOR_TRAIN = 4
+SUBJECTS_FOR_TRAIN = 15
 SUBJECTS_FOR_VAL = 1
+
+BATCH_SIZE = 32
 
 DEVICE = 'cuda' if torch.cuda.is_available() else 'cpu'
 print(f"Device where pytorch will execute: {DEVICE}")
@@ -86,7 +89,8 @@ for subject in range(SUBJECTS_FOR_TRAIN):  # number of subjects
                 train_outputs[subject][char, blck]
 
 train_ds = bci.beta_dataset(_ds_, _labels_)
-train_dl = torch.utils.data.DataLoader(train_ds, batch_size=16, shuffle=True)
+train_dl = torch.utils.data.DataLoader(train_ds, batch_size=BATCH_SIZE,
+                                       shuffle=True)
 
 """
 PREPARING VALIDATION DATASET
@@ -126,7 +130,7 @@ val_dl = torch.utils.data.DataLoader(val_ds, batch_size=16, shuffle=True)
 
 bci_net = bci.bci_cnn().to(device=DEVICE)
 
-n_epochs = 10
+n_epochs = 100
 optimizer = torch.optim.Adam(bci_net.parameters(), lr=0.002)
 loss_fn = torch.nn.CrossEntropyLoss()
 
