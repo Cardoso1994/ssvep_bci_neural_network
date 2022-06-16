@@ -28,7 +28,8 @@ import torch
 
 import bci
 
-np.set_printoptions(2)
+np.set_printoptions(3)
+torch.set_printoptions(precision=3)
 torch.manual_seed(7)
 
 """
@@ -40,10 +41,11 @@ NUM_CHARS = 40  # number of symbols in screen keyboard
 NUM_EPOCHS = 100
 NUM_EPOCHS = 150
 
-SUBJECTS_FOR_TRAIN = 15
+SUBJECTS_FOR_TRAIN = 5
 SUBJECTS_FOR_VAL = 1
 
 BATCH_SIZE = 32
+BATCH_SIZE = 16
 
 DEVICE = 'cuda' if torch.cuda.is_available() else 'cpu'
 print(f"Device where pytorch will execute: {DEVICE}")
@@ -51,10 +53,9 @@ print(f"Device where pytorch will execute: {DEVICE}")
 """
 Main code
 """
-
 ELECTRODE_CONFIGURATION = "occ"
 file_suffix = f"_{ELECTRODE_CONFIGURATION}.npy"
-data_location = os.path.join("..", "BETA_database",
+data_location = os.path.join("..", "BETA_Database",
                              f"BETA_{ELECTRODE_CONFIGURATION}")
 
 """
@@ -77,7 +78,6 @@ input_shape = train_inputs[0].shape
 _ds_ = np.zeros((input_shape[0], input_shape[1], input_shape[2],
                  NUM_CHARS * NUM_BLOCKS * SUBJECTS_FOR_TRAIN))
 _labels_ = np.zeros(NUM_CHARS * NUM_BLOCKS * SUBJECTS_FOR_TRAIN)
-_ds_[:, :, :, :] = np.inf
 
 for subject in range(SUBJECTS_FOR_TRAIN):  # number of subjects
     for blck in range(NUM_BLOCKS):  # number of blocks
@@ -114,7 +114,6 @@ for i in range(SUBJECTS_FOR_TRAIN + 1,
 _ds_ = np.zeros((input_shape[0], input_shape[1], input_shape[2],
                  NUM_CHARS * NUM_BLOCKS * SUBJECTS_FOR_VAL))
 _labels_ = np.zeros(NUM_CHARS * NUM_BLOCKS * len(val_inputs))
-_ds_[:, :, :, :] = np.inf
 
 for subject in range(SUBJECTS_FOR_VAL):  # number of subjects
     for blck in range(NUM_BLOCKS):  # number of blocks
@@ -127,11 +126,13 @@ for subject in range(SUBJECTS_FOR_VAL):  # number of subjects
                 val_outputs[subject][char, blck]
 
 val_ds = bci.beta_dataset(_ds_, _labels_)
-val_dl = torch.utils.data.DataLoader(val_ds, batch_size=16, shuffle=True)
+val_dl = torch.utils.data.DataLoader(val_ds, batch_size=BATCH_SIZE,
+                                     shuffle=True)
 
 bci_net = bci.bci_cnn().to(device=DEVICE)
 
-optimizer = torch.optim.Adam(bci_net.parameters(), lr=0.002)
+optimizer = torch.optim.Adam(bci_net.parameters(), lr=0.005)
 loss_fn = torch.nn.CrossEntropyLoss()
 
-bci.training_loop(NUM_EPOCHS, optimizer, bci_net, loss_fn, train_dl, DEVICE)
+bci.training_loop(NUM_EPOCHS, optimizer, bci_net, loss_fn, train_dl,
+                  val_dl, DEVICE)

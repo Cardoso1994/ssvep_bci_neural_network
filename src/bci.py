@@ -17,6 +17,7 @@ import torch.nn as nn
 import torch.nn.functional as F
 import torch.optim as optim
 
+torch.set_printoptions(precision=3)
 
 class bci_cnn(nn.Module):
     """
@@ -28,25 +29,33 @@ class bci_cnn(nn.Module):
     def __init__(self):
         """Convolutional Neural Network definition."""
         super().__init__()
-        self.conv1 = nn.Conv2d(5, 2, kernel_size=1, padding="same").double()
-        self.act1 = nn.Tanh()
+        # self.conv1 = nn.Conv2d(5, 2, kernel_size=1, padding="same").double()
+        self.conv1 = nn.Conv2d(5, 2, kernel_size=1, padding=(0, 0)).double()
+        # self.act1 = nn.Tanh()
+        self.act1 = nn.ReLU()
 
-        self.conv2 = nn.Conv2d(2, 1, kernel_size=1, padding="same").double()
-        self.act2 = nn.Tanh()
+        # self.conv2 = nn.Conv2d(2, 1, kernel_size=1, padding="same").double()
+        # self.conv2 = nn.Conv2d(2, 1, kernel_size=(1, 3),
+        #                        padding=(0, 1)).double()
+        self.conv2 = nn.Conv2d(2, 1, kernel_size=1,
+                               padding=0).double()
+        # self.act2 = nn.Tanh()
+        self.act2 = nn.ReLU()
         self.pool2 = nn.MaxPool2d(kernel_size=(1, 2))
 
-        self.conv3 = nn.Conv1d(9, 2, kernel_size=1, padding="same").double()
-        self.act3 = nn.Tanh()
+        # self.conv3 = nn.Conv1d(9, 2, kernel_size=1, padding="same").double()
+        self.conv3 = nn.Conv1d(9, 2, kernel_size=1, padding=0).double()
+        # self.act3 = nn.Tanh()
+        self.act3 = nn.ReLU()
 
-        self.conv4 = nn.Conv1d(2, 1, kernel_size=1, padding="same").double()
-        self.act4 = nn.Tanh()
-        self.pool4 = nn.MaxPool1d(kernel_size=(2))
+        # self.conv4 = nn.Conv1d(2, 1, kernel_size=1, padding="same").double()
+        # self.conv4 = nn.Conv1d(2, 1, kernel_size=3, padding=1).double()
+        self.conv4 = nn.Conv1d(2, 1, kernel_size=1, padding=0).double()
+        # self.act4 = nn.Tanh()
+        self.act4 = nn.ReLU()
+        self.pool4 = nn.MaxPool1d(kernel_size=2)
 
         self.linear5 = nn.Linear(62, 40).double()
-
-        # self.fc1 = nn.Linear(8 * 8 * 8, 32)
-        # self.act3 = nn.Tanh()
-        # self.fc2 = nn.Linear(32, 2)
 
     def forward(self, x):
         """Convolutional Neural Network forward pass."""
@@ -60,13 +69,12 @@ class bci_cnn(nn.Module):
 
         # channel selection
         out = self.act3(self.conv3(out))
+
         out = self.act4(self.conv4(out))
-        out = torch.squeeze(out)
         out = self.pool4(out)
+        out = torch.squeeze(out)
 
         out = self.linear5(out)
-        # print(out.shape)
-        # exit()
 
         return out
 
@@ -116,14 +124,23 @@ class beta_dataset(torch.utils.data.Dataset):
         return (self.eeg_signals[:, :, :, idx], self.labels[idx])
 
 
-def training_loop(n_epochs, optimizer, model, loss_fn, train_loader, device):
+def training_loop(n_epochs, optimizer, model, loss_fn, train_loader,
+                  val_loader, device):
     """Training loop definition."""
     for epoch in range(1, n_epochs + 1):
         loss_train = 0.0
+        loss_val = 0.0
+
+        correct_train, total_train = 0, 0
+        correct_val, total_val = 0, 0
+        # training
         for signals, labels in train_loader:
-            signals = signals.to(device=device)  # <1>
+            signals = signals.to(device=device)
             labels = labels.to(device=device)
             outputs = model(signals)
+            _, predicted = torch.max(outputs, dim=1)
+            total_train += labels.shape[0]
+            correct_train += int((predicted == labels).sum())
             loss = loss_fn(outputs, labels.long())
 
             optimizer.zero_grad()
@@ -132,9 +149,27 @@ def training_loop(n_epochs, optimizer, model, loss_fn, train_loader, device):
 
             loss_train += loss.item()
 
+        # validation
+        with torch.no_grad():
+            for signals, labels in val_loader:
+                signals = signals.to(device=device)
+                labels = labels.to(device=device)
+                outputs = model(signals)
+
+                _, predicted = torch.max(outputs, dim=1)
+                total_val += labels.shape[0]
+                correct_val += int((predicted == labels).sum())
+
+                loss = loss_fn(outputs, labels.long())
+
+                loss_val += loss.item()
+
         if epoch == 1 or epoch % 10 == 0:
             # print('{} Epoch {}, Training loss {}'.format(
             #     datetime.datetime.now(), epoch,
             #     loss_train / len(train_loader)))
             print(f"Epoch: {epoch}, "
-                  + f"Training loss: {loss_train / len(train_loader)}")
+                  + f"Training loss: {loss_train / len(train_loader):.3f}"
+                  + f" Training Acc: {correct_train / total_train:.3f}"
+                  + f" Validation loss: {loss_val / len(val_loader):.3f}"
+                  + f" Valitaditon Acc: {correct_val / total_val:.3f}")
