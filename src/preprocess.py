@@ -23,9 +23,10 @@ from scipy.io import loadmat
 import scipy.signal as signal
 from scipy import signal
 
-# np.set_printoptions(2)
+np.set_printoptions(2)
 
-OUT_PATH = os.path.join("/", "home", "cardoso", "garbage")
+
+OUT_PATH = os.path.join(os.path.expanduser("~"), "garbage")
 WHOLE_SAMPLE = False
 TOTAL_SUBJECTS = 15  # only testing right now for first 15 subjects
 NUM_BLOCKS = 4
@@ -35,8 +36,11 @@ SIGNAL_LEN = 1  # lapse to be evaluated in the neural network [s]
 VISUAL_LATENCY = 0.13  # according to BETA paper
 VISUAL_CUE = 0.5  # time where the target is highlighted before stimulus
 SAMPLE_LEN = FS * SIGNAL_LEN  # number of sample points in the final signal
-MAX_EPOCHS = 100
-FILTER_DEGREE = 3
+
+FILTER_DEGREE = 4
+HIGH_FREQ_BAND = 90
+LOW_FREQS_BANDS = [7, 23, 39, 55, 71]
+
 CHANNELS_MAP = {'FP1': 0, 'FPZ': 1, 'FP2': 2, 'AF3': 3, 'AF4': 4, 'F7': 5,
                 'F5': 6, 'F3': 7, 'F1': 8, 'FZ': 9, 'F2': 10, 'F4': 11,
                 'F6': 12, 'F8': 13, 'FT7': 14, 'FC5': 15, 'FC3': 16, 'FC1': 17,
@@ -49,6 +53,9 @@ CHANNELS_MAP = {'FP1': 0, 'FPZ': 1, 'FP2': 2, 'AF3': 3, 'AF4': 4, 'F7': 5,
                 'PO7': 52, 'PO5': 53, 'PO3': 54, 'POZ': 55, 'PO4': 56,
                 'PO6': 57, 'PO8': 58, 'CB1': 59, 'O1': 60, 'OZ': 61, 'O2': 62,
                 'CB2': 63}
+
+
+# occs = ['PZ', 'PO3', 'PO5', 'PO4', 'PO6', 'POZ', 'O1', 'OZ', 'O2']
 
 """
 Channel selection
@@ -84,44 +91,37 @@ CHARS_MAP = '.,<abcdefghijklmnopqrstuvwxyz0123456789 '
 CHARS_MAP = {char: i for i, char in enumerate(CHARS_MAP)}
 
 for i in range(1, 71):
-    S = loadmat(f"../BETA Database/S{i}_own.mat")
+    S = loadmat(f"../BETA_database/S{i}_own.mat")
 
     """
     Creating filterbank. Set of filters to be applied to the signals
     Every other harmonic
     """
-    low_freqs_bands = [7, 23, 39, 55, 71]
-    num_filters = len(low_freqs_bands)
-    high_freq_band = 90
+    # low_freqs_bands = [7.5, 15.5, 23.5, 31.5, 39.5, 47.5, 55.5]
+    num_filters = len(LOW_FREQS_BANDS)
     filterbank = []
-    for low_freq in low_freqs_bands:
+    for low_freq in LOW_FREQS_BANDS:
         filterbank.append(signal.butter(FILTER_DEGREE, (low_freq,
-                                                        high_freq_band),
+                                                        HIGH_FREQ_BAND),
                                         btype='bandpass', fs=FS, output='sos'))
 
     """
     apply filters to each signal, per channel, per block, per character
     """
     # undesired_samples = floor((VISUAL_CUE + VISUAL_LATENCY) * FS)
-    undesired_samples = floor((VISUAL_CUE) * FS)
     # undesired_samples = 0
+    undesired_samples = floor((VISUAL_CUE) * FS)
+
     last_point = undesired_samples + ceil(SAMPLE_LEN)
     sample_len = last_point - undesired_samples
 
-    # cnn_input = np.zeros((NUM_CHNNLS, sample_len, num_filters, NUM_CHARS,
-    #                     NUM_BLOCKS))
-    cnn_input = np.zeros((num_filters, NUM_CHNNLS, sample_len, NUM_CHARS,
-                          NUM_BLOCKS))
+    # chan_1 = 5
+    # block_1 = 0
+    # char_1 = CHARS_MAP[' ']
 
-    cnn_output = np.zeros((NUM_CHARS, NUM_BLOCKS))
-
-    chan_1 = 5
-    block_1 = 0
-    char_1 = CHARS_MAP[' ']
-
-    chan_2 = 10
-    block_2 = 0
-    char_2 = CHARS_MAP[' ']
+    # chan_2 = 10
+    # block_2 = 0
+    # char_2 = CHARS_MAP[' ']
 
     eeg = S['eeg'][CHANNELS, undesired_samples:last_point, :, :]
 
@@ -135,6 +135,12 @@ for i in range(1, 71):
     #                            d=1/FS)
     # ax[1].plot(freqs, np.abs(X))
 
+    # cnn_input = np.zeros((NUM_CHNNLS, sample_len, num_filters, NUM_CHARS,
+    #                     NUM_BLOCKS))
+    cnn_input = np.zeros((num_filters, NUM_CHNNLS, sample_len, NUM_CHARS,
+                          NUM_BLOCKS))
+
+    cnn_output = np.zeros((NUM_CHARS, NUM_BLOCKS))
     for char in range(NUM_CHARS):
         for blck in range(NUM_BLOCKS):
             signal_to_filt = eeg[:, :, blck, char]
@@ -144,7 +150,7 @@ for i in range(1, 71):
                     signal_filtered[channel, :] = \
                         signal.sosfilt(filt, signal_to_filt[channel, :])
                 # cnn_input[:, :, filt_num, char, blck] = signal_filtered
-                cnn_input[filt_num, :, :, char, blck] = signal_filtered
+                cnn_input[filt_num, :, :, char, blck] = signal_filtered[:, :]
                 cnn_output[char, blck] = char
 
     """

@@ -41,13 +41,13 @@ NUM_CHARS = 40  # number of symbols in screen keyboard
 NUM_EPOCHS = 100
 NUM_EPOCHS = 150
 
-SUBJECTS_FOR_TRAIN = 5
+SUBJECTS_FOR_TRAIN = 4
 SUBJECTS_FOR_VAL = 1
 
 BATCH_SIZE = 32
 BATCH_SIZE = 16
 
-DEVICE = 'cuda' if torch.cuda.is_available() else 'cpu'
+DEVICE = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 print(f"Device where pytorch will execute: {DEVICE}")
 
 """
@@ -55,7 +55,7 @@ Main code
 """
 ELECTRODE_CONFIGURATION = "occ"
 file_suffix = f"_{ELECTRODE_CONFIGURATION}.npy"
-data_location = os.path.join("..", "BETA_Database",
+data_location = os.path.join("..", "BETA_database",
                              f"BETA_{ELECTRODE_CONFIGURATION}")
 
 """
@@ -79,9 +79,9 @@ _ds_ = np.zeros((input_shape[0], input_shape[1], input_shape[2],
                  NUM_CHARS * NUM_BLOCKS * SUBJECTS_FOR_TRAIN))
 _labels_ = np.zeros(NUM_CHARS * NUM_BLOCKS * SUBJECTS_FOR_TRAIN)
 
-for subject in range(SUBJECTS_FOR_TRAIN):  # number of subjects
-    for blck in range(NUM_BLOCKS):  # number of blocks
-        for char in range(NUM_CHARS):  # number of characters
+for subject in range(SUBJECTS_FOR_TRAIN):
+    for blck in range(NUM_BLOCKS):
+        for char in range(NUM_CHARS):
             _ds_[:, :, :, subject * NUM_BLOCKS * NUM_CHARS
                  + blck * NUM_CHARS + char] = \
                 train_inputs[subject][:, :, :, char, blck]
@@ -113,7 +113,7 @@ for i in range(SUBJECTS_FOR_TRAIN + 1,
 #                  NUM_CHARS * NUM_BLOCKS * len(val_inputs)))
 _ds_ = np.zeros((input_shape[0], input_shape[1], input_shape[2],
                  NUM_CHARS * NUM_BLOCKS * SUBJECTS_FOR_VAL))
-_labels_ = np.zeros(NUM_CHARS * NUM_BLOCKS * len(val_inputs))
+_labels_ = np.zeros(NUM_CHARS * NUM_BLOCKS * SUBJECTS_FOR_TRAIN)
 
 for subject in range(SUBJECTS_FOR_VAL):  # number of subjects
     for blck in range(NUM_BLOCKS):  # number of blocks
@@ -131,7 +131,7 @@ val_dl = torch.utils.data.DataLoader(val_ds, batch_size=BATCH_SIZE,
 
 bci_net = bci.bci_cnn().to(device=DEVICE)
 
-optimizer = torch.optim.Adam(bci_net.parameters(), lr=0.005)
+optimizer = torch.optim.Adam(bci_net.parameters(), lr=0.001)
 loss_fn = torch.nn.CrossEntropyLoss()
 
 bci.training_loop(NUM_EPOCHS, optimizer, bci_net, loss_fn, train_dl,

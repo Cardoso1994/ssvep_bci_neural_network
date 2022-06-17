@@ -14,8 +14,8 @@ References
 import numpy as np
 import torch
 import torch.nn as nn
-import torch.nn.functional as F
-import torch.optim as optim
+# import torch.nn.functional as F
+# import torch.optim as optim
 
 torch.set_printoptions(precision=3)
 
@@ -29,52 +29,80 @@ class bci_cnn(nn.Module):
     def __init__(self):
         """Convolutional Neural Network definition."""
         super().__init__()
-        # self.conv1 = nn.Conv2d(5, 2, kernel_size=1, padding="same").double()
-        self.conv1 = nn.Conv2d(5, 2, kernel_size=1, padding=(0, 0)).double()
-        # self.act1 = nn.Tanh()
-        self.act1 = nn.ReLU()
 
-        # self.conv2 = nn.Conv2d(2, 1, kernel_size=1, padding="same").double()
-        # self.conv2 = nn.Conv2d(2, 1, kernel_size=(1, 3),
-        #                        padding=(0, 1)).double()
-        self.conv2 = nn.Conv2d(2, 1, kernel_size=1,
-                               padding=0).double()
-        # self.act2 = nn.Tanh()
-        self.act2 = nn.ReLU()
-        self.pool2 = nn.MaxPool2d(kernel_size=(1, 2))
+        # filter bank
+        self.conv1 = nn.Conv2d(5, 6, kernel_size=1, padding="same").double()
+        self.norm1 = nn.BatchNorm2d(6).double()
+        self.act1 = nn.Tanh()
 
-        # self.conv3 = nn.Conv1d(9, 2, kernel_size=1, padding="same").double()
-        self.conv3 = nn.Conv1d(9, 2, kernel_size=1, padding=0).double()
-        # self.act3 = nn.Tanh()
-        self.act3 = nn.ReLU()
+        self.conv2 = nn.Conv2d(6, 1, kernel_size=(1, 3),
+                               padding="same").double()
+        self.norm2 = nn.BatchNorm2d(1).double()
+        self.act2 = nn.Tanh()
 
-        # self.conv4 = nn.Conv1d(2, 1, kernel_size=1, padding="same").double()
-        # self.conv4 = nn.Conv1d(2, 1, kernel_size=3, padding=1).double()
-        self.conv4 = nn.Conv1d(2, 1, kernel_size=1, padding=0).double()
-        # self.act4 = nn.Tanh()
-        self.act4 = nn.ReLU()
-        self.pool4 = nn.MaxPool1d(kernel_size=2)
+        # channel selection
+        self.conv3 = nn.Conv2d(1, 10, kernel_size=(5, 1), padding="valid",
+                               stride=(4, 1)).double()
+        self.norm3 = nn.BatchNorm2d(10).double()
+        self.act3 = nn.Tanh()
 
-        self.linear5 = nn.Linear(62, 40).double()
+        self.conv4 = nn.Conv2d(10, 1, kernel_size=(2, 3), padding=(0, 1),
+                               stride=(1, 1)).double()
+        self.norm4 = nn.BatchNorm2d(1).double()
+        self.act4 = nn.Tanh()
+        self.pool4 = nn.MaxPool2d(kernel_size=(1, 2))
+
+        # self.conv5 = nn.Conv2d(1, 10, kernel_size=(1, 3),
+        #                        padding="same").double()
+        # self.norm5 = nn.BatchNorm2d(10).double()
+        # self.act5 = nn.Tanh()
+        # self.pool5 = nn.MaxPool2d(kernel_size=(1, 2))
+
+        self.linear6 = nn.Linear(1 * 1 * 125, 40).double()
 
     def forward(self, x):
         """Convolutional Neural Network forward pass."""
         # filterbank
-        out = self.act1(self.conv1(x))
+        # print(f"shape of input: {x.shape}")
+        out = self.conv1(x)
+        out = self.norm1(out)
+        out = self.act1(out)
+        # print(f"shape of output after layer 1: {out.shape}")
 
         # second stage of filter bank
-        out = self.act2(self.conv2(out))
-        out = torch.squeeze(out)
-        out = self.pool2(out)
+        out = self.conv2(out)
+        out = self.norm2(out)
+        out = self.act2(out)
+        # out = self.pool2(out)
+        # out = self.drop2(out)
+        # print(f"shape of output after layer 2: {out.shape}")
 
         # channel selection
-        out = self.act3(self.conv3(out))
+        out = self.conv3(out)
+        out = self.norm3(out)
+        out = self.act3(out)
+        # print(f"shape of out after layer 3: {out.shape}")
 
-        out = self.act4(self.conv4(out))
+        out = self.conv4(out)
+        out = self.norm4(out)
+        out = self.act4(out)
         out = self.pool4(out)
-        out = torch.squeeze(out)
+        # print(f"shape of out after layer 4: {out.shape}")
 
-        out = self.linear5(out)
+        # out = self.conv5(out)
+        # out = self.norm5(out)
+        # out = self.act5(out)
+        # out = self.pool5(out)
+        # exit()
+
+        out = self.linear6(out)
+        out = torch.squeeze(out)
+        # print(out.shape)
+        # print()
+        # print()
+        # print()
+        # print()
+        # exit()
 
         return out
 
@@ -138,6 +166,8 @@ def training_loop(n_epochs, optimizer, model, loss_fn, train_loader,
             signals = signals.to(device=device)
             labels = labels.to(device=device)
             outputs = model(signals)
+            # print(outputs.shape)
+            # exit()
             _, predicted = torch.max(outputs, dim=1)
             total_train += labels.shape[0]
             correct_train += int((predicted == labels).sum())
@@ -165,11 +195,8 @@ def training_loop(n_epochs, optimizer, model, loss_fn, train_loader,
                 loss_val += loss.item()
 
         if epoch == 1 or epoch % 10 == 0:
-            # print('{} Epoch {}, Training loss {}'.format(
-            #     datetime.datetime.now(), epoch,
-            #     loss_train / len(train_loader)))
-            print(f"Epoch: {epoch}, "
-                  + f"Training loss: {loss_train / len(train_loader):.3f}"
-                  + f" Training Acc: {correct_train / total_train:.3f}"
-                  + f" Validation loss: {loss_val / len(val_loader):.3f}"
-                  + f" Valitaditon Acc: {correct_val / total_val:.3f}")
+            print(f"Epoch {epoch}: "
+                  + f"Training: loss: {loss_train / len(train_loader):.3f}"
+                  + f", Acc: {correct_train / total_train:.3f}"
+                  + f" || Validation loss: {loss_val / len(val_loader):.3f}"
+                  + f", Acc: {correct_val / total_val:.3f}")
