@@ -79,14 +79,11 @@ for subject in range(1, SUBJECTS_FOR_TRAIN + 1):
     train_outputs.append(os.path.join(data_location,
                                              f"S{subject}_output{file_suffix}"))
 
-print("Input files")
-for input_file in train_inputs:
-    print(input_file)
-
 train_ds = bci.beta_dataset(input_shape, train_inputs, train_outputs,
                             NUM_BLOCKS, NUM_CHARS, eeg_first=True)
 train_dl = torch.utils.data.DataLoader(train_ds, batch_size=BATCH_SIZE,
                                        shuffle=True)
+
 
 """
 VALIDATION DATASET
@@ -109,12 +106,13 @@ val_ds = bci.beta_dataset(input_shape, val_inputs, val_outputs,
 val_dl = torch.utils.data.DataLoader(val_ds, batch_size=BATCH_SIZE,
                                        shuffle=True)
 
+
 """
 NEURAL NETWORK
 """
 bci_net = bci.bci_cnn_eeg_first().to(device=DEVICE)
 
-optimizer = torch.optim.Adam(bci_net.parameters(), lr=0.001)
+optimizer = torch.optim.Adam(bci_net.parameters(), lr=0.0005)
 loss_fn = torch.nn.CrossEntropyLoss()
 
 bci.training_loop(NUM_EPOCHS, optimizer, bci_net, loss_fn, train_dl,

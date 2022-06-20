@@ -14,10 +14,11 @@ References
 import numpy as np
 import torch
 import torch.nn as nn
-import torch.nn.functional as F
-import torch.optim as optim
+# import torch.nn.functional as F
+# import torch.optim as optim
 
 torch.set_printoptions(precision=3)
+
 
 class bci_cnn(nn.Module):
     """
@@ -124,41 +125,43 @@ class bci_cnn_eeg_first(nn.Module):
     Loss function at page 187!!!
     """
 
-    def __init__(self, input_shape, input_files, output_files):
-        """ Convolutional Neural Network definition."""
+    def __init__(self):
+        """Convolutional Neural Network definition."""
         super().__init__()
 
 
         # filter bank
-        self.conv1 = nn.Conv2d(9, 20, kernel_size=1, padding="same").double()
-        self.act1 = nn.ReLU()
-        # self.norm1 = nn.BatchNorm2d(20).double()
-        self.dropout1 = nn.Dropout(p=0.6)
+        self.conv1 = nn.Conv2d(9, 9, kernel_size=1, padding="same").double()
+        self.act1 = nn.Tanh()
+        self.norm1 = nn.BatchNorm2d(9).double()
+        # self.dropout1 = nn.Dropout(p=0.6)
 
 
-        self.conv2 = nn.Conv2d(20, 20, kernel_size=(5, 3),
+        self.conv2 = nn.Conv2d(9, 9, kernel_size=(3, 3), padding=(0, 1),
+                               stride=(2, 1)).double()
+        self.act2 = nn.Tanh()
+        self.norm2 = nn.BatchNorm2d(9).double()
+        # self.pool2 = nn.MaxPool2d(kernel_size=2)
+        # self.dropout2 = nn.Dropout(p=0.6)
+
+
+        self.conv3 = nn.Conv2d(9, 2, kernel_size=(2, 3),
                                padding="same").double()
-        self.act2 = nn.ReLU()
-        # self.norm2 = nn.BatchNorm2d(15).double()
-        self.dropout2 = nn.Dropout(p=0.6)
-        self.pool2 = nn.MaxPool2d(kernel_size= 2)
-
-
-        self.conv3 = nn.Conv2d(20, 50, kernel_size=(3, 3),
-                               padding="same").double()
-        self.act3 = nn.ReLU()
-        # self.norm3 = nn.BatchNorm2d(50).double()
+        # self.conv3 = nn.Conv2d(20, 50, kernel_size=(3, 3),
+        #                        padding="same").double()
+        self.act3 = nn.Tanh()
+        self.norm3 = nn.BatchNorm2d(2).double()
         self.pool3 = nn.MaxPool2d(kernel_size=2)
-        self.dropout3 = nn.Dropout(p=0.6)
+        # self.dropout3 = nn.Dropout(p=0.6)
 
 
-        self.conv4 = nn.Conv2d(50, 50, kernel_size=1, padding="same").double()
-        self.act4 = nn.ReLU()
-        self.norm4 = nn.BatchNorm2d(50).double()
+        self.conv4 = nn.Conv2d(2, 2, kernel_size=1, padding="same").double()
+        self.act4 = nn.Tanh()
+        self.norm4 = nn.BatchNorm2d(2).double()
         self.dropout4 = nn.Dropout(p=0.6)
 
 
-        self.linear5 = nn.Linear(3100, 40).double()
+        self.linear5 = nn.Linear(250, 40).double()
 
     def forward(self, x):
         """Convolutional Neural Network forward pass."""
@@ -167,37 +170,36 @@ class bci_cnn_eeg_first(nn.Module):
         # filterbank
         out = self.conv1(x)
         out = self.act1(out)
-        out = self.dropout1(out)
+        # out = self.dropout1(out)
+        out = self.norm1(out)
         # print(f"shape of output after layer 1: {out.shape}")
 
 
         # second stage of filter bank
         out = self.conv2(out)
         out = self.act2(out)
-        # out = self.norm2(out)
-        out = self.pool2(out)
-        out = self.dropout2(out)
+        # out = self.pool2(out)
+        out = self.norm2(out)
+        # out = self.dropout2(out)
         # print(f"shape of output after layer 2: {out.shape}")
 
 
         # channel selection
         out = self.conv3(out)
         out = self.act3(out)
-        # out = self.norm3(out)
         out = self.pool3(out)
-        out = self.dropout3(out)
+        out = self.norm3(out)
+        # out = self.dropout3(out)
         # print(f"shape of out after layer 3: {out.shape}")
 
 
         out = self.conv4(out)
         out = self.act4(out)
+        # out = self.dropout4(out)
         out = self.norm4(out)
-        out = self.dropout4(out)
-        # print(f"shape of out after layer 4: {out.shape}")
 
 
         out = out.view(batch_size, -1)
-        # print(f"shape of out after view: {out.shape}")
 
         out = self.linear5(out)
         # print(f"shape of out after layer 6: {out.shape}")
@@ -208,14 +210,12 @@ class bci_cnn_eeg_first(nn.Module):
 
 
 class beta_dataset(torch.utils.data.Dataset):
-    """
-    Create a dataset from the BETA database for SSVEP BCI.
-    """
+    """Create a dataset from the BETA database for SSVEP BCI."""
 
     def __init__(self, input_shape, input_files, output_files, num_blocks,
                  num_chars, eeg_first=False):
         """
-        Parameters
+        Parameters.
         ----------
         input_shape : tuple
             len of input shape is the number of dimensions. Each element value
