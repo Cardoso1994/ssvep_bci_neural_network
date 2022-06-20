@@ -97,10 +97,6 @@ for subject in range(SUBJECTS_FOR_TRAIN + 1,
     val_outputs.append(os.path.join(data_location,
                                             f"S{subject}_output{file_suffix}"))
 
-_ds_ = np.zeros((input_shape[0], input_shape[1], input_shape[2],
-                 NUM_CHARS * NUM_BLOCKS * SUBJECTS_FOR_VAL))
-_labels_ = np.zeros(NUM_CHARS * NUM_BLOCKS * SUBJECTS_FOR_TRAIN)
-
 val_ds = bci.beta_dataset(input_shape, val_inputs, val_outputs,
                             NUM_BLOCKS, NUM_CHARS, eeg_first=True)
 val_dl = torch.utils.data.DataLoader(val_ds, batch_size=BATCH_SIZE,

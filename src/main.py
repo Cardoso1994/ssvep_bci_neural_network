@@ -20,9 +20,7 @@ Developer: Marco Antonio Cardoso Moreno (mcardosom2021@cic.ipn.mx
 """
 
 import os
-import random
 
-import matplotlib.pyplot as plt
 import numpy as np
 import torch
 
@@ -59,75 +57,50 @@ data_location = os.path.join("..", "BETA_database",
                              f"BETA_{ELECTRODE_CONFIGURATION}")
 
 """
-PREPARING TRAINING DATASET
+TRAINING DATASET
 """
+# input shape: (5, 9, 250, 40, 4)
+# First three dimensions in npy file are the same as in dataset
+# npy file: (num_filters, eeg_channels, sample_points, chars, blocks)
+input_shape = (5, 9, 250, 40, 4)
+
+# dataset:
+#        (num_filters, num_eeg_channels, sample_points, chars *  blocks * users)
+# (5, 9, 250, 40 *  4 * SUBJECTS_FOR_VAL)
 train_inputs = []
 train_outputs = []
-for i in range(1, SUBJECTS_FOR_TRAIN + 1):
-    train_inputs.append(np.load(os.path.join(data_location,
-                                             f"S{i}_input{file_suffix}")))
-    train_outputs.append(np.load(os.path.join(data_location,
-                                              f"S{i}_output{file_suffix}")))
+for subject in range(1, SUBJECTS_FOR_TRAIN + 1):
+    train_inputs.append(os.path.join(data_location,
+                                     f"S{subject}_input{file_suffix}"))
+    train_outputs.append(os.path.join(data_location,
+                                      f"S{subject}_output{file_suffix}"))
 
-input_shape = train_inputs[0].shape
 # num_channels = train_inputs[0].shape[0]
 # first three dimensions are the same, then we multiply by 40 chars and 4
 # blocks, as well as by the number of subjects
 # (num_filters, num_eeg_channels, sample_points, chars, blocks)
 # (5, 9, 250, 40, 4)
-_ds_ = np.zeros((input_shape[0], input_shape[1], input_shape[2],
-                 NUM_CHARS * NUM_BLOCKS * SUBJECTS_FOR_TRAIN))
-_labels_ = np.zeros(NUM_CHARS * NUM_BLOCKS * SUBJECTS_FOR_TRAIN)
-
-for subject in range(SUBJECTS_FOR_TRAIN):
-    for blck in range(NUM_BLOCKS):
-        for char in range(NUM_CHARS):
-            _ds_[:, :, :, subject * NUM_BLOCKS * NUM_CHARS
-                 + blck * NUM_CHARS + char] = \
-                train_inputs[subject][:, :, :, char, blck]
-            _labels_[subject * NUM_BLOCKS * NUM_CHARS
-                     + blck * NUM_CHARS + char] = \
-                train_outputs[subject][char, blck]
-
-train_ds = bci.beta_dataset(_ds_, _labels_)
+train_ds = bci.beta_dataset(input_shape, train_inputs, train_outputs,
+                            NUM_BLOCKS, NUM_CHARS, eeg_first=False)
 train_dl = torch.utils.data.DataLoader(train_ds, batch_size=BATCH_SIZE,
                                        shuffle=True)
 
 """
-PREPARING VALIDATION DATASET
+VALIDATION DATASET
 """
 val_inputs = []
 val_outputs = []
-for i in range(SUBJECTS_FOR_TRAIN + 1,
-               SUBJECTS_FOR_TRAIN + SUBJECTS_FOR_VAL + 1):
-    val_inputs.append(np.load(os.path.join(data_location,
-                                           f"S{i}_input{file_suffix}")))
-    val_outputs.append(np.load(os.path.join(data_location,
-                                            f"S{i}_output{file_suffix}")))
+for subject in range(SUBJECTS_FOR_TRAIN + 1,
+                     SUBJECTS_FOR_TRAIN + SUBJECTS_FOR_VAL + 1):
+    val_inputs.append(os.path.join(data_location,
+                                   f"S{subject}_input{file_suffix}"))
+    val_outputs.append(os.path.join(data_location,
+                                    f"S{subject}_output{file_suffix}"))
 
-# first three dimensions are the same, then we multiply by 40 chars and 4
-# blocks, as well as by the number of subjects
-# (num_filters, num_eeg_channels, sample_points, chars, blocks)
-# (5, 9, 250, 40, 4)
-# _ds_ = np.zeros((input_shape[2], input_shape[0], input_shape[1],
-#                  NUM_CHARS * NUM_BLOCKS * len(val_inputs)))
-_ds_ = np.zeros((input_shape[0], input_shape[1], input_shape[2],
-                 NUM_CHARS * NUM_BLOCKS * SUBJECTS_FOR_VAL))
-_labels_ = np.zeros(NUM_CHARS * NUM_BLOCKS * SUBJECTS_FOR_TRAIN)
-
-for subject in range(SUBJECTS_FOR_VAL):  # number of subjects
-    for blck in range(NUM_BLOCKS):  # number of blocks
-        for char in range(NUM_CHARS):  # number of characters
-            _ds_[:, :, :, subject * NUM_BLOCKS * NUM_CHARS
-                 + blck * NUM_CHARS + char] = \
-                val_inputs[subject][:, :, :, char, blck]
-            _labels_[subject * NUM_BLOCKS * NUM_CHARS
-                     + blck * NUM_CHARS + char] = \
-                val_outputs[subject][char, blck]
-
-val_ds = bci.beta_dataset(_ds_, _labels_)
+val_ds = bci.beta_dataset(input_shape, val_inputs, val_outputs,
+                            NUM_BLOCKS, NUM_CHARS, eeg_first=False)
 val_dl = torch.utils.data.DataLoader(val_ds, batch_size=BATCH_SIZE,
-                                     shuffle=True)
+                                       shuffle=True)
 
 bci_net = bci.bci_cnn().to(device=DEVICE)
 

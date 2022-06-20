@@ -37,9 +37,9 @@ VISUAL_LATENCY = 0.13  # according to BETA paper
 VISUAL_CUE = 0.5  # time where the target is highlighted before stimulus
 SAMPLE_LEN = FS * SIGNAL_LEN  # number of sample points in the final signal
 
-FILTER_DEGREE = 4
+FILTER_DEGREE = 8
 HIGH_FREQ_BAND = 90
-LOW_FREQS_BANDS = [7, 23, 39, 55, 71]
+LOW_FREQS_BANDS = [7, 23, 39, 55, 71, 79]
 
 CHANNELS_MAP = {'FP1': 0, 'FPZ': 1, 'FP2': 2, 'AF3': 3, 'AF4': 4, 'F7': 5,
                 'F5': 6, 'F3': 7, 'F1': 8, 'FZ': 9, 'F2': 10, 'F4': 11,

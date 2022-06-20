@@ -32,40 +32,35 @@ class bci_cnn(nn.Module):
         super().__init__()
 
         # filter bank
-        self.conv1 = nn.Conv2d(5, 10, kernel_size=(1, 5), padding="same").double()
+        self.conv1 = nn.Conv2d(5, 5, kernel_size=3,
+                               padding="same").double()
+        self.norm1 = nn.BatchNorm2d(5).double()
         self.act1 = nn.Tanh()
-        self.norm1 = nn.BatchNorm2d(10).double()
 
-        self.conv2 = nn.Conv2d(10, 5, kernel_size=(1, 5),
+        self.conv2 = nn.Conv2d(5, 5, kernel_size=3,
                                padding="same").double()
         self.act2 = nn.Tanh()
         self.norm2 = nn.BatchNorm2d(5).double()
-
-        self.conv2_1 = nn.Conv2d(5, 1, kernel_size=(1, 5),
-                               padding="same").double()
-        self.act2_1 = nn.ReLU()
-        self.norm2_1 = nn.BatchNorm2d(1).double()
+        self.pool2 = nn.MaxPool2d(kernel_size=2)
 
         # channel selection
-        self.conv3 = nn.Conv2d(1, 1, kernel_size=(5, 1), padding="valid",
-                               stride=(4, 1)).double()
+        self.conv3 = nn.Conv2d(5, 5, kernel_size=3, padding="valid").double()
         self.act3 = nn.Tanh()
-        self.norm3 = nn.BatchNorm2d(1).double()
+        self.norm3 = nn.BatchNorm2d(5).double()
 
-        self.conv4 = nn.Conv2d(1, 1, kernel_size=(2, 5), padding=(0, 2),
-                               stride=(1, 1)).double()
+        self.conv4 = nn.Conv2d(5, 5, kernel_size=(1, 3), padding="same",).double()
         self.act4 = nn.Tanh()
-        self.norm4 = nn.BatchNorm2d(1).double()
-        self.pool4 = nn.MaxPool2d(kernel_size=(1, 2))
+        self.norm4 = nn.BatchNorm2d(5).double()
+        self.pool4 = nn.MaxPool2d(kernel_size=2)
 
-        self.conv5 = nn.Conv2d(1, 10, kernel_size=(1, 5),
+        self.conv5 = nn.Conv2d(5, 5, kernel_size=(1, 3),
                                padding="same").double()
         self.act5 = nn.Tanh()
-        self.norm5 = nn.BatchNorm2d(10).double()
+        self.norm5 = nn.BatchNorm2d(5).double()
         self.pool5 = nn.MaxPool2d(kernel_size=(1, 2))
         self.drop5 = nn.Dropout(p=0.9)
 
-        self.linear6 = nn.Linear(620, 40).double()
+        self.linear6 = nn.Linear(150, 40).double()
 
     def forward(self, x):
         """Convolutional Neural Network forward pass."""
@@ -73,47 +68,38 @@ class bci_cnn(nn.Module):
 
         # filterbank
         out = self.conv1(x)
-        # out = self.norm1(out)
+        out = self.norm1(out)
         out = self.act1(out)
         # print(f"shape of output after layer 1: {out.shape}")
 
         # second stage of filter bank
         out = self.conv2(out)
         out = self.act2(out)
+        out = self.pool2(out)
         out = self.norm2(out)
-
-        out = self.conv2_1(out)
-        out = self.act2_1(out)
-        out = self.norm2_1(out)
-        # out = self.pool2(out)
-        # out = self.drop2(out)
         # print(f"shape of output after layer 2: {out.shape}")
 
         # channel selection
         out = self.conv3(out)
         out = self.act3(out)
-        ut = self.norm3(out)
+        out = self.norm3(out)
         # print(f"shape of out after layer 3: {out.shape}")
 
         out = self.conv4(out)
         out = self.act4(out)
-        out = self.norm4(out)
         out = self.pool4(out)
+        out = self.norm4(out)
         # print(f"shape of out after layer 4: {out.shape}")
 
         out = self.conv5(out)
         out = self.act5(out)
         out = self.norm5(out)
         out = self.pool5(out)
-        out = self.drop5(out)
         # print(f"shape of out after layer 5: {out.shape}")
 
         out = out.view(batch_size, -1)
-        # print(f"shape of out after view: {out.shape}")
 
         out = self.linear6(out)
-        # print(f"shape of out after layer 6: {out.shape}")
-        # exit()
 
         return out
 
@@ -247,6 +233,7 @@ class beta_dataset(torch.utils.data.Dataset):
                     _labels_[subject * num_blocks * num_chars
                             + blck * num_chars + char] = \
                         output[char, blck]
+
             del(input)
             del(output)
 
@@ -297,8 +284,8 @@ def training_loop(n_epochs, optimizer, model, loss_fn, train_loader,
             loss_train += loss.item()
 
         # validation
-        with torch.no_grad():
-            for signals, labels in val_loader:
+        for signals, labels in val_loader:
+            with torch.no_grad():
                 signals = signals.to(device=device)
                 labels = labels.to(device=device)
                 outputs = model(signals)
